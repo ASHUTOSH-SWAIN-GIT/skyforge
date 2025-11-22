@@ -1,0 +1,11 @@
+{
+  "name": "server",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "go build -o bin/server ./cmd/api",
+    "dev": "air",
+    "start": "./bin/server",
+    "lint": "golangci-lint run"
+  }
+}
