@@ -138,3 +138,42 @@ func (q *Queries) GetProjectsByUser(ctx context.Context, userID uuid.UUID) ([]Ge
 	}
 	return items, nil
 }
+
+const updateProject = `-- name: UpdateProject :one
+UPDATE projects 
+SET name = $2,
+    description = $3,
+    data = $4,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, user_id, name, description, data, is_public, last_saved_at, created_at, updated_at
+`
+
+type UpdateProjectParams struct {
+	ID          uuid.UUID       `json:"id"`
+	Name        string          `json:"name"`
+	Description sql.NullString  `json:"description"`
+	Data        json.RawMessage `json:"data"`
+}
+
+func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (Project, error) {
+	row := q.db.QueryRowContext(ctx, updateProject,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.Data,
+	)
+	var i Project
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Description,
+		&i.Data,
+		&i.IsPublic,
+		&i.LastSavedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}

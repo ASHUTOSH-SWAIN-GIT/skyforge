@@ -26,7 +26,16 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler) *http.
 		}
 	})
 
-	mux.HandleFunc("/projects/", projectHandler.GetProject)
+	mux.HandleFunc("/projects/", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			projectHandler.GetProject(w, r)
+		case http.MethodPut:
+			projectHandler.UpdateProject(w, r)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	})
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))

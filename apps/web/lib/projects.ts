@@ -16,3 +16,10 @@ export async function createProject(data: { name: string; description: string; c
     });
 }
 
+export async function updateProject(projectId: string, data: { data?: string; name?: string; description?: string }) {
+    return api<Project>(`/projects/${projectId}`, {
+        method: "PUT",
+        body: data,
+    });
+}
+

@@ -150,3 +150,93 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(project)
 }
+
+type UpdateProjectRequest struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	Data        *string `json:"data"`
+}
+
+func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get userid from the cookie
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userIDStr, err := auth.ValidateJWT(cookie.Value)
+	if err != nil {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+	_, _ = uuid.Parse(userIDStr)
+
+	// get project ID from URL path
+	pathParts := strings.TrimPrefix(r.URL.Path, "/projects/")
+	if pathParts == "" || pathParts == r.URL.Path {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	projectIDStr := strings.Split(pathParts, "/")[0]
+	projectIDStr = strings.Split(projectIDStr, "?")[0]
+
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	// parse request body
+	var req UpdateProjectRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Get existing project
+	existingProject, err := h.DB.GetProjectByID(r.Context(), projectID)
+	if err != nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	// TODO: Check if user has access to this project (owner or collaborator)
+
+	// Prepare update params - use provided values or keep existing
+	name := existingProject.Name
+	if req.Name != nil && *req.Name != "" {
+		name = *req.Name
+	}
+
+	description := existingProject.Description
+	if req.Description != nil {
+		description = sql.NullString{String: *req.Description, Valid: *req.Description != ""}
+	}
+
+	data := existingProject.Data
+	if req.Data != nil {
+		data = []byte(*req.Data)
+	}
+
+	// Update project
+	project, err := h.DB.UpdateProject(r.Context(), database.UpdateProjectParams{
+		ID:          projectID,
+		Name:        name,
+		Description: description,
+		Data:        data,
+	})
+	if err != nil {
+		http.Error(w, "Failed to update project", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(project)
+}

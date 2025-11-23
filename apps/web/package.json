@@ -16,8 +16,10 @@
     "next": "^16.0.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "reactflow": "^11.11.4",
     "swr": "^2.3.6",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",
