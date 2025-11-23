@@ -1,0 +1,17 @@
+Visual Layout:
+
+Split Screen (Recommended):
+
+Left Side: A dark, aesthetic abstract visualization of nodes connecting (referencing your DB schema graph). A testimonial or tagline like "Design your database at the speed of thought."
+
+Right Side: Clean, centered login card.
+
+Components:
+
+Logo: Top left or centered above the card.
+
+Heading: "Welcome to Skyforge."
+
+The Button: A large, high-contrast button: [G] Continue with Google.
+
+Footer: Small text: "By continuing, you agree to our Terms of Service."
