@@ -8,27 +8,28 @@ package database
 import (
 	"context"
 	"database/sql"
-
-	"github.com/google/uuid"
 )
 
-const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, name, avatar_url, provider)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT (email) DO UPDATE
-SET name = $2, avatar_url = $3, updated_at = NOW()
+const createOrUpdateUser = `-- name: CreateOrUpdateUser :one
+INSERT INTO users (email, name, avatar_url, provider, updated_at)
+VALUES ($1, $2, $3, $4, NOW())
+ON CONFLICT (email) 
+DO UPDATE SET 
+    name = $2,
+    avatar_url = $3,
+    updated_at = NOW()
 RETURNING id, email, name, avatar_url, provider, created_at, updated_at
 `
 
-type CreateUserParams struct {
+type CreateOrUpdateUserParams struct {
 	Email     string         `json:"email"`
 	Name      string         `json:"name"`
 	AvatarUrl sql.NullString `json:"avatar_url"`
 	Provider  string         `json:"provider"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
+func (q *Queries) CreateOrUpdateUser(ctx context.Context, arg CreateOrUpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, createOrUpdateUser,
 		arg.Email,
 		arg.Name,
 		arg.AvatarUrl,
@@ -53,25 +54,6 @@ SELECT id, email, name, avatar_url, provider, created_at, updated_at FROM users 
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.Name,
-		&i.AvatarUrl,
-		&i.Provider,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, avatar_url, provider, created_at, updated_at FROM users WHERE id = $1
-`
-
-func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
