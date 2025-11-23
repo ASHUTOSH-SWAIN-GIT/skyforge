@@ -18,12 +18,11 @@ export async function api <T>(path :string,options:FetchOptions = {}){
     })
 
     if (!res.ok) {
-        // Handle 401 (Unauthorized) by redirecting to login
-        if (res.status === 401) {
-          window.location.href = "/login";
-          throw new Error("Unauthorized");
-        }
-        throw new Error(`API Error: ${res.statusText}`);
+        // Don't redirect here - let the components handle auth errors
+        // This prevents infinite redirect loops
+        const error: any = new Error(`API Error: ${res.statusText}`);
+        error.status = res.status;
+        throw error;
     }
     if (res.status === 204) return null as T;
 

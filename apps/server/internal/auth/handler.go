@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -131,6 +132,8 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 	// fetch user from the db
 	user, err := h.DB.GetUserByID(r.Context(), userID)
 	if err != nil {
+		// Log the error to see if it's DB issue or not found
+		fmt.Printf("User not found or DB error: %v\n", err)
 		http.Error(w, "user not found ", http.StatusNotFound)
 		return
 	}
