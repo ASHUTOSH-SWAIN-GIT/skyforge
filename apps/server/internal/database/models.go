@@ -24,6 +24,14 @@ type Project struct {
 	UpdatedAt   time.Time       `json:"updated_at"`
 }
 
+type ProjectCollaborator struct {
+	ID        uuid.UUID `json:"id"`
+	ProjectID uuid.UUID `json:"project_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type User struct {
 	ID        uuid.UUID      `json:"id"`
 	Email     string         `json:"email"`

@@ -1,4 +1,4 @@
-module github.com/ASHUTOSH-SWAIN-GIT/DbAlly/server
+module github.com/ASHUTOSH-SWAIN-GIT/skyforge/server
 
 go 1.25.4
 

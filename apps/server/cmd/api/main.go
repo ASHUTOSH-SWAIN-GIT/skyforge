@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/ASHUTOSH-SWAIN-GIT/DbAlly/server/internal/auth"
-	"github.com/ASHUTOSH-SWAIN-GIT/DbAlly/server/internal/database"
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/api"
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/auth"
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
@@ -35,33 +36,9 @@ func main() {
 
 	queries := database.New(conn)
 	authHandler := auth.NewHandler(queries)
+	projectHandler := api.NewProjectHandler(queries)
 
-	mux := http.NewServeMux()
-
-	// CORS middleware
-	corsMiddleware := func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-
-			next(w, r)
-		}
-	}
-
-	mux.HandleFunc("/auth/google/login", authHandler.GoogleLogin)
-	mux.HandleFunc("/auth/google/callback", authHandler.GoogleCallback)
-	mux.HandleFunc("/auth/me", corsMiddleware(authHandler.GetMe))
-
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
-	})
+	mux := api.NewRouter(authHandler, projectHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {

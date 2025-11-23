@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/ASHUTOSH-SWAIN-GIT/DbAlly/server/internal/database"
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
 	"github.com/google/uuid"
 )
 
