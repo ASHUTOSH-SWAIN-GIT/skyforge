@@ -5,6 +5,10 @@ export async function getMyProjects() {
     return api<Project[]>("/projects");
 }
 
+export async function getProject(projectId: string) {
+    return api<Project>(`/projects/${projectId}`);
+}
+
 export async function createProject(data: { name: string; description: string; collaborators: string[] }) {
     return api<Project>("/projects", {
         method: "POST",

@@ -26,6 +26,8 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler) *http.
 		}
 	})
 
+	mux.HandleFunc("/projects/", projectHandler.GetProject)
+
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})

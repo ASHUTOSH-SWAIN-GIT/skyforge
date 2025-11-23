@@ -22,6 +22,9 @@ export default function DashboardLayout({
   const { user } = useUser();
   const [showLogout, setShowLogout] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Check if we're on a canvas page - don't show sidebar for canvas
+  const isCanvasPage = pathname?.includes("/canvas/");
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -57,6 +60,11 @@ export default function DashboardLayout({
       icon: Users,
     },
   ];
+
+  // Full page layout for canvas
+  if (isCanvasPage) {
+    return <div className="min-h-screen bg-mocha-base">{children}</div>;
+  }
 
   return (
     <div className="flex min-h-screen bg-mocha-base text-mocha-text font-sans antialiased">

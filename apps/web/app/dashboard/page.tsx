@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getMyProjects } from "../../lib/projects";
 import { Project } from "../../types";
 import CreateProjectModal from "../components/CreateProjectModal";
 
 export default function WorkspacePage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -69,7 +71,11 @@ export default function WorkspacePage() {
             </div>
         ) : (
           projects.map((project) => (
-            <div key={project.id} className="h-48 p-6 rounded-xl border border-mocha-surface0 bg-mocha-mantle hover:border-mocha-blue transition-colors flex flex-col justify-between group cursor-pointer">
+            <div 
+              key={project.id} 
+              onClick={() => router.push(`/dashboard/canvas/${project.id}`)}
+              className="h-48 p-6 rounded-xl border border-mocha-surface0 bg-mocha-mantle hover:border-mocha-blue transition-colors flex flex-col justify-between group cursor-pointer"
+            >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="h-8 w-8 rounded bg-mocha-blue/20 flex items-center justify-center text-mocha-blue border border-mocha-blue/30">

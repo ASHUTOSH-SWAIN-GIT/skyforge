@@ -1,0 +1,43 @@
+Create a professional Database Schema Design Canvas using React, Tailwind CSS, and Lucide React icons. The aesthetic should be "Linear-style" dark mode: technical, high-contrast, and clean.
+
+The layout consists of a full-screen infinite grid background with interactive "Table Nodes" and a floating toolbar.
+
+1. THE CANVAS BACKGROUND:
+- Use a dark gray background (zinc-950).
+- Overlay a subtle dot pattern or grid pattern (opacity 20%) to represent an infinite workspace.
+
+2. THE CUSTOM "TABLE NODE" (The most important part):
+- Create a card component representing a Database Table.
+- Style: Rounded-xl, border-zinc-800, bg-zinc-900, shadow-lg.
+- Header:
+  - Table Name (e.g., "users", "orders") in bold, white text.
+  - A small "More Options" (...) button on the right.
+  - A bottom border separating header from columns.
+- Body (Column List):
+  - Render a list of database columns.
+  - Each row should have:
+    - Left and Right "Handle" dots (visual indicators for connecting lines).
+    - A "Key" icon if it is a Primary Key (PK) (color gold/yellow).
+    - Column Name (e.g., "id", "email") in white.
+    - Data Type (e.g., "uuid", "varchar") in a muted mono-space font (text-zinc-500).
+    - Constraint badges (e.g., "NN", "U") on the right side.
+- Footer:
+  - A full-width "Add Column" button that appears on hover, subtle and minimalist.
+
+3. THE FLOATING TOOLBAR (Bottom Center):
+- A pill-shaped floating menu with a blur effect (bg-zinc-900/80 backdrop-blur).
+- Buttons for:
+  - "Add Table" (Plus icon).
+  - "Auto Layout" (Wand icon).
+  - "Zoom In" / "Zoom Out" / "Fit View".
+  - "Export SQL" (Code icon, accented color like indigo-500).
+
+4. MOCK DATA:
+- Render 2-3 tables connected by lines (visualize the edges).
+- Table 1: "users" (id, email, password, created_at).
+- Table 2: "posts" (id, title, content, user_id [FK]).
+
+5. STYLE GUIDE:
+- Use 'zinc' for grays.
+- Use 'indigo' for primary actions and active states.
+- Use a font that looks technical (Inter or a sans-serif).

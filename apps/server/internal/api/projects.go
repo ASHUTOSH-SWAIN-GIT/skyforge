@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/auth"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
@@ -98,4 +99,54 @@ func (h *ProjectHandler) GetMyProjects(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(projects)
+}
+
+func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get userid from the cookie
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	userIDStr, err := auth.ValidateJWT(cookie.Value)
+	if err != nil {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+	_, _ = uuid.Parse(userIDStr)
+
+	// get project ID from URL path
+	pathParts := strings.TrimPrefix(r.URL.Path, "/projects/")
+	if pathParts == "" || pathParts == r.URL.Path {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	// Extract just the project ID (in case there are query params or trailing slashes)
+	projectIDStr := strings.Split(pathParts, "/")[0]
+	projectIDStr = strings.Split(projectIDStr, "?")[0]
+
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	// fetch project
+	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	if err != nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	// TODO: Check if user has access to this project (owner or collaborator)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(project)
 }
