@@ -3,9 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "go build -o bin/server ./cmd/api",
-    "dev": "air",
-    "start": "./bin/server",
-    "lint": "golangci-lint run"
+    "build": "make build",
+    "dev": "make dev",
+    "sqlc": "make sqlc",
+    "migrate": "make migrate-up",
+    "migrate:down": "make migrate-down",
+    "clean": "make clean"
   }
 }

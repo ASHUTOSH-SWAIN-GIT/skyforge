@@ -64,7 +64,7 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 
 	var googleUser struct {
 		Email   string `json:"email"`
-		Name    string `json: "name"`
+		Name    string `json:"name"`
 		Picture string `json:"picture"`
 	}
 
