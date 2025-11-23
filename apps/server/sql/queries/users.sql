@@ -10,3 +10,6 @@ DO UPDATE SET
     avatar_url = $3,
     updated_at = NOW()
 RETURNING *;
+
+-- name: GetUserByID :one
+SELECT * FROM users WHERE id = $1;

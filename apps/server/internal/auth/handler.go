@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ASHUTOSH-SWAIN-GIT/DbAlly/server/internal/database"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -102,7 +103,39 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		Secure:   false, //set true in prod
 	})
 
-	http.Redirect(w, r, "http//localhost:3000/dashboard", http.StatusSeeOther)
+	http.Redirect(w, r, "http://localhost:3000/dashboard", http.StatusSeeOther)
+}
+
+func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
+	// get cookie
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// validate the jwt token
+	userIDStr, err := ValidateJWT(cookie.Value)
+	if err != nil {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		return
+	}
+
+	// parse UUID
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		http.Error(w, "Invalid User id ", http.StatusInternalServerError)
+		return
+	}
+
+	// fetch user from the db
+	user, err := h.DB.GetUserByID(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "user not found ", http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
 
 func generateState() string {
