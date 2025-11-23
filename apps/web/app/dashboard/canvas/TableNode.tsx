@@ -100,31 +100,42 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
       </div>
 
       {/* Body - Column List */}
-      <div className="px-2 py-2">
+      <div className="py-2">
         {data.columns.map((column: Column) => (
           <div
             key={column.id}
-            className="flex items-center gap-2 px-2 py-1.5 hover:bg-mocha-surface0/50 rounded transition-colors group"
+            className="flex items-center gap-2 px-4 py-2 hover:bg-mocha-surface0/50 transition-colors group relative"
+            title="Drag from right handle to connect, or connect to left handle"
           >
-            {/* Left Handle */}
+            {/* Left Handle - Target (for incoming connections) */}
             <Handle
               type="target"
               position={Position.Left}
-              id={`${column.id}-left`}
-              className="w-2 h-2 rounded-full bg-mocha-surface1 group-hover:bg-mocha-mauve transition-colors border-0"
+              id={`${column.id}-target`}
+              style={{
+                width: 16,
+                height: 16,
+                background: column.isPrimaryKey ? "#f9e2af" : "#6c7086",
+                border: "2px solid #1e1e2e",
+                borderRadius: "50%",
+                cursor: "crosshair",
+                left: -8,
+                zIndex: 10,
+              }}
+              className="group-hover:!bg-mocha-mauve group-hover:!scale-125 transition-all"
             />
 
             {/* Key Icon - Clickable */}
             <button
               onClick={() => handleTogglePrimaryKey(column.id, column.isPrimaryKey)}
-              className={`flex-shrink-0 transition-colors ${
+              className={`flex-shrink-0 transition-colors ml-1 ${
                 column.isPrimaryKey
                   ? "text-mocha-yellow"
                   : "text-mocha-subtext0 hover:text-mocha-yellow"
               }`}
               title={column.isPrimaryKey ? "Primary Key" : "Set as Primary Key"}
             >
-              <Key className="w-3.5 h-3.5" />
+              <Key className="w-4 h-4" />
             </button>
 
             {/* Column Name */}
@@ -195,7 +206,7 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
             )}
 
             {/* Constraints */}
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-shrink-0">
               {column.constraints.map((constraint, i) => (
                 <span
                   key={i}
@@ -209,25 +220,35 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
             {/* Delete Column Button */}
             <button
               onClick={() => deleteColumn(id, column.id)}
-              className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-mocha-red/20 rounded text-mocha-subtext0 hover:text-mocha-red"
+              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-mocha-red/20 rounded text-mocha-subtext0 hover:text-mocha-red flex-shrink-0"
               title="Delete column"
             >
-              <X className="w-3 h-3" />
+              <X className="w-3.5 h-3.5" />
             </button>
 
-            {/* Right Handle */}
+            {/* Right Handle - Source (for outgoing connections) */}
             <Handle
               type="source"
               position={Position.Right}
-              id={`${column.id}-right`}
-              className="w-2 h-2 rounded-full bg-mocha-surface1 group-hover:bg-mocha-mauve transition-colors border-0"
+              id={`${column.id}-source`}
+              style={{
+                width: 16,
+                height: 16,
+                background: column.isPrimaryKey ? "#f9e2af" : "#6c7086",
+                border: "2px solid #1e1e2e",
+                borderRadius: "50%",
+                cursor: "crosshair",
+                right: -8,
+                zIndex: 10,
+              }}
+              className="group-hover:!bg-mocha-mauve group-hover:!scale-125 transition-all"
             />
           </div>
         ))}
       </div>
 
       {/* Footer - Add Column Button */}
-      <div className="px-4 py-2 border-t border-mocha-surface0">
+      <div className="px-4 py-2.5 border-t border-mocha-surface0">
         <button
           onClick={() => addColumn(id)}
           className="w-full text-left px-2 py-1.5 text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 rounded transition-colors"

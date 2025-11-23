@@ -18,7 +18,7 @@ import ReactFlow, {
 import "reactflow/dist/style.css";
 import { getProject, updateProject } from "../../../../lib/projects";
 import { Project } from "../../../../types";
-import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code } from "lucide-react";
+import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code, ChevronLeft, ChevronRight, Table, Save } from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
 
@@ -33,6 +33,7 @@ function CanvasInner() {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const {
     nodes,
@@ -161,114 +162,167 @@ function CanvasInner() {
   }
 
   return (
-    <div className="h-screen w-screen bg-mocha-base relative">
-      {/* Header - Simple Back Button */}
-      <div className="absolute top-4 left-4 z-20">
-        <button
-          onClick={() => router.push("/dashboard")}
-          className="px-4 py-2 text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-sm"
-        >
-          ← Back to Dashboard
-        </button>
+    <div className="h-screen w-screen bg-mocha-base relative flex overflow-hidden">
+      {/* Collapsible Sidebar */}
+      <div
+        className={`h-full bg-mocha-mantle border-r border-mocha-surface0 transition-all duration-300 ease-in-out flex-shrink-0 ${
+          isSidebarOpen ? "w-64" : "w-0"
+        } overflow-hidden`}
+      >
+        <div className={`h-full flex flex-col ${isSidebarOpen ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}>
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-mocha-surface0 flex items-center justify-between">
+            <h2 className="text-mocha-text font-semibold text-sm">Tools</h2>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-1.5 hover:bg-mocha-surface0 rounded transition-colors text-mocha-subtext0 hover:text-mocha-text"
+              title="Collapse Sidebar"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Sidebar Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Table Actions */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-mocha-subtext1 uppercase tracking-wider">Tables</h3>
+              <button
+                onClick={handleAddTable}
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Table</span>
+              </button>
+            </div>
+
+            {/* View Controls */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-mocha-subtext1 uppercase tracking-wider">View</h3>
+              <div className="space-y-1.5">
+                <button
+                  onClick={() => zoomIn()}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                  <span>Zoom In</span>
+                </button>
+                <button
+                  onClick={() => zoomOut()}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                  <span>Zoom Out</span>
+                </button>
+                <button
+                  onClick={handleFitView}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                  <span>Fit View</span>
+                </button>
+                <button
+                  onClick={handleFitView}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  <span>Auto Layout</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold text-mocha-subtext1 uppercase tracking-wider">Actions</h3>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-mauve hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSaving ? "Saving..." : "Save Project"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* React Flow Canvas */}
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={(changes: NodeChange[]) => {
-          // Apply changes using React Flow's utility
-          const updatedNodes = applyNodeChanges(changes, nodes);
-          setNodes(updatedNodes);
-        }}
-        onEdgesChange={(changes: EdgeChange[]) => {
-          // Apply changes using React Flow's utility
-          const updatedEdges = applyEdgeChanges(changes, edges);
-          setEdges(updatedEdges);
-        }}
-        onConnect={(connection: Connection) => {
-          if (!connection.source || !connection.target) return;
-          const newEdge = {
-            id: `edge-${connection.source}-${connection.target}-${Date.now()}`,
-            source: connection.source,
-            target: connection.target,
-            sourceHandle: connection.sourceHandle,
-            targetHandle: connection.targetHandle,
-            type: "smoothstep" as const,
-            animated: true,
-          };
-          setEdges([...edges, newEdge]);
-        }}
-        onPaneClick={handlePaneClick}
-        nodeTypes={nodeTypes}
-        fitView
-        className="bg-mocha-base"
-      >
-        <Background
-          color="#313244"
-          gap={20}
-          size={1}
-          style={{ opacity: 0.2 }}
-        />
-        <Controls className="bg-mocha-mantle border border-mocha-surface0" />
-        <MiniMap
-          className="bg-mocha-mantle border border-mocha-surface0"
-          nodeColor="#cba6f7"
-          maskColor="#1e1e2e"
-        />
-      </ReactFlow>
+      {/* Toggle Button (when sidebar is closed) */}
+      {!isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-mocha-mantle border border-mocha-surface0 rounded-r-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text shadow-lg"
+          title="Open Sidebar"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      )}
 
-      {/* Floating Toolbar */}
-      <Panel position="bottom-center" className="z-10">
-        <div className="flex items-center gap-2 bg-mocha-mantle/80 backdrop-blur-md rounded-full px-4 py-2 border border-mocha-surface0 shadow-lg">
+      {/* Main Canvas Area */}
+      <div className="flex-1 relative">
+        {/* Header - Simple Back Button */}
+        <div className="absolute top-4 left-4 z-20">
           <button
-            onClick={handleAddTable}
-            className="p-2 hover:bg-mocha-surface0 rounded-full transition-colors text-mocha-subtext0 hover:text-mocha-text"
-            title="Add Table"
+            onClick={() => router.push("/dashboard")}
+            className="px-4 py-2 text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-sm"
           >
-            <Plus className="w-4 h-4" />
-          </button>
-          <div className="w-px h-6 bg-mocha-surface0"></div>
-          <button
-            onClick={handleFitView}
-            className="p-2 hover:bg-mocha-surface0 rounded-full transition-colors text-mocha-subtext0 hover:text-mocha-text"
-            title="Auto Layout"
-          >
-            <Wand2 className="w-4 h-4" />
-          </button>
-          <div className="w-px h-6 bg-mocha-surface0"></div>
-          <button
-            onClick={() => zoomIn()}
-            className="p-2 hover:bg-mocha-surface0 rounded-full transition-colors text-mocha-subtext0 hover:text-mocha-text"
-            title="Zoom In"
-          >
-            <ZoomIn className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => zoomOut()}
-            className="p-2 hover:bg-mocha-surface0 rounded-full transition-colors text-mocha-subtext0 hover:text-mocha-text"
-            title="Zoom Out"
-          >
-            <ZoomOut className="w-4 h-4" />
-          </button>
-          <button
-            onClick={handleFitView}
-            className="p-2 hover:bg-mocha-surface0 rounded-full transition-colors text-mocha-subtext0 hover:text-mocha-text"
-            title="Fit View"
-          >
-            <Maximize2 className="w-4 h-4" />
-          </button>
-          <div className="w-px h-6 bg-mocha-surface0"></div>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="p-2 hover:bg-mocha-surface0 rounded-full transition-colors text-mocha-mauve hover:text-mocha-lavender disabled:opacity-50"
-            title="Save Project"
-          >
-            <Code className="w-4 h-4" />
+            ← Back to Dashboard
           </button>
         </div>
-      </Panel>
+
+        {/* React Flow Canvas */}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={(changes: NodeChange[]) => {
+            // Apply changes using React Flow's utility
+            const updatedNodes = applyNodeChanges(changes, nodes);
+            setNodes(updatedNodes);
+          }}
+          onEdgesChange={(changes: EdgeChange[]) => {
+            // Apply changes using React Flow's utility
+            const updatedEdges = applyEdgeChanges(changes, edges);
+            setEdges(updatedEdges);
+          }}
+          onConnect={(connection: Connection) => {
+            // Only allow connections between column handles, not node-level connections
+            if (!connection.source || !connection.target) return;
+            if (!connection.sourceHandle || !connection.targetHandle) {
+              console.warn("Connections must be made between specific columns");
+              return;
+            }
+            
+            const newEdge = {
+              id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`,
+              source: connection.source,
+              target: connection.target,
+              sourceHandle: connection.sourceHandle,
+              targetHandle: connection.targetHandle,
+              type: "smoothstep" as const,
+              animated: true,
+              style: { stroke: "#cba6f7", strokeWidth: 2 },
+            };
+            setEdges([...edges, newEdge]);
+          }}
+          onPaneClick={handlePaneClick}
+          nodeTypes={nodeTypes}
+          fitView
+          className="bg-mocha-base"
+        >
+          <Background
+            color="#313244"
+            gap={20}
+            size={1}
+            style={{ opacity: 0.2 }}
+          />
+          <Controls className="bg-mocha-mantle border border-mocha-surface0" />
+          <MiniMap
+            className="bg-mocha-mantle border border-mocha-surface0"
+            nodeColor="#cba6f7"
+            maskColor="#1e1e2e"
+          />
+        </ReactFlow>
+      </div>
     </div>
   );
 }
