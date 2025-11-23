@@ -36,3 +36,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Air (hot reload tool)
+tmp/
+.air.toml
+
+# Build outputs
+bin/
