@@ -151,12 +151,17 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
   setSelectedNodeId: (id) => set({ selectedNodeId: id }),
 
   loadFromData: (data) => {
-    if (!data || !data.nodes) {
+    if (!data) {
+      set({
+        nodes: [],
+        edges: [],
+      });
       return;
     }
     set({
       nodes: data.nodes || [],
       edges: data.edges || [],
+      selectedNodeId: null,
     });
   },
 

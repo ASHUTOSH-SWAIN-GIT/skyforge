@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"net/http"
@@ -153,10 +154,16 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleanData, err := normalizeCanvasJSON(req.Data)
+	if err != nil {
+		http.Error(w, "Invalid canvas data", http.StatusBadRequest)
+		return
+	}
+
 	project, err := h.DB.UpdateProjectData(r.Context(), database.UpdateProjectDataParams{
 		ID:     projectID,
 		UserID: userID,
-		Data:   req.Data,
+		Data:   cleanData,
 	})
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -192,7 +199,17 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sqlScript, err := compiler.GenerateSQL(project.Data)
+	dataBytes, err := normalizeCanvasJSON(project.Data)
+	if err != nil {
+		http.Error(w, "Failed to parse project data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(dataBytes) == 0 {
+		http.Error(w, "Project has no canvas data", http.StatusBadRequest)
+		return
+	}
+
+	sqlScript, err := compiler.GenerateSQL(dataBytes)
 	if err != nil {
 		http.Error(w, "Failed to generate SQL: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -228,7 +245,17 @@ func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	sqlScript, err := h.AI.GenerateSQLFromGraph(project.Data)
+	dataBytes, err := normalizeCanvasJSON(project.Data)
+	if err != nil {
+		http.Error(w, "Failed to parse project data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(dataBytes) == 0 {
+		http.Error(w, "Project has no canvas data", http.StatusBadRequest)
+		return
+	}
+
+	sqlScript, err := h.AI.GenerateSQLFromGraph(dataBytes)
 	if err != nil {
 		http.Error(w, "AI Generation failed: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -248,4 +275,23 @@ func (h *ProjectHandler) authorize(r *http.Request) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return uuid.Parse(userIDStr)
+}
+
+func normalizeCanvasJSON(raw json.RawMessage) (json.RawMessage, error) {
+	trimmed := bytes.TrimSpace(raw)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return nil, nil
+	}
+
+	if trimmed[0] == '"' {
+		var unquoted string
+		if err := json.Unmarshal(trimmed, &unquoted); err != nil {
+			return nil, err
+		}
+		return json.RawMessage([]byte(unquoted)), nil
+	}
+
+	out := make([]byte, len(trimmed))
+	copy(out, trimmed)
+	return json.RawMessage(out), nil
 }

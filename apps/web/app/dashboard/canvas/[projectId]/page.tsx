@@ -16,9 +16,9 @@ import ReactFlow, {
   applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { getProject, updateProject } from "../../../../lib/projects";
+import { getProject, updateProject, exportProjectSQL, exportProjectSQLAI } from "../../../../lib/projects";
 import { Project } from "../../../../types";
-import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code, ChevronLeft, ChevronRight, Table, Save } from "lucide-react";
+import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code, ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
 
@@ -33,6 +33,9 @@ function CanvasInner() {
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [sqlPreview, setSqlPreview] = useState<string | null>(null);
+  const [sqlSource, setSqlSource] = useState<"standard" | "ai">("standard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const {
@@ -59,16 +62,29 @@ function CanvasInner() {
         const data = await getProject(projectId);
         setProject(data);
         
-        // Load canvas data from project
+        // Always clear the canvas first when switching projects
+        setNodes([]);
+        setEdges([]);
+        
+        // Load canvas data from project if it exists
         if (data.data) {
           try {
             const canvasData = typeof data.data === "string" 
               ? JSON.parse(data.data) 
               : data.data;
-            loadFromData(canvasData);
+            if (canvasData && (canvasData.nodes || canvasData.edges)) {
+              loadFromData(canvasData);
+            }
           } catch (error) {
             console.error("Failed to parse canvas data", error);
+            // If parsing fails, ensure we have empty canvas
+            setNodes([]);
+            setEdges([]);
           }
+        } else {
+          // No data exists, ensure empty canvas
+          setNodes([]);
+          setEdges([]);
         }
       } catch (error) {
         console.error("Failed to fetch project", error);
@@ -81,7 +97,7 @@ function CanvasInner() {
     if (projectId) {
       fetchProject();
     }
-  }, [projectId, router, loadFromData]);
+  }, [projectId, router, loadFromData, setNodes, setEdges]);
 
   const handleSave = useCallback(async () => {
     if (!project) return;
@@ -90,7 +106,7 @@ function CanvasInner() {
       setIsSaving(true);
       const canvasData = exportToData();
       await updateProject(projectId, {
-        data: JSON.stringify(canvasData),
+        data: canvasData,
       });
     } catch (error) {
       console.error("Failed to save project", error);
@@ -136,6 +152,44 @@ function CanvasInner() {
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.2 });
   }, [fitView]);
+
+  const handleExport = useCallback(async (mode: "standard" | "ai") => {
+    if (!project) return;
+    try {
+      setIsExporting(true);
+      setSqlSource(mode);
+      setSqlPreview(null);
+      const sql =
+        mode === "standard"
+          ? await exportProjectSQL(project.id.toString())
+          : await exportProjectSQLAI(project.id.toString());
+      setSqlPreview(sql);
+    } catch (error) {
+      console.error("Failed to export SQL", error);
+      if (mode === "ai") {
+        try {
+          const fallbackSql = await exportProjectSQL(project.id.toString());
+          setSqlSource("standard");
+          setSqlPreview(
+            `-- AI export failed (${error instanceof Error ? error.message : "Unknown error"}). Showing standard SQL instead.\n\n${fallbackSql}`
+          );
+        } catch (fallbackError) {
+          console.error("Fallback SQL export failed", fallbackError);
+          setSqlPreview(
+            `Failed to generate SQL: ${
+              fallbackError instanceof Error ? fallbackError.message : "Unknown error"
+            }`
+          );
+        }
+      } else {
+        setSqlPreview(
+          `Failed to generate SQL: ${error instanceof Error ? error.message : "Unknown error"}`
+        );
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  }, [project]);
 
   if (isLoading) {
     return (
@@ -242,6 +296,22 @@ function CanvasInner() {
                 <Save className="w-4 h-4" />
                 <span>{isSaving ? "Saving..." : "Save Project"}</span>
               </button>
+            <button
+              onClick={() => handleExport("standard")}
+              disabled={isExporting}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Code className="w-4 h-4" />
+              <span>{isExporting && sqlSource === "standard" ? "Generating..." : "Generate SQL"}</span>
+            </button>
+            <button
+              onClick={() => handleExport("ai")}
+              disabled={isExporting}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Wand2 className="w-4 h-4" />
+              <span>{isExporting && sqlSource === "ai" ? "Generating..." : "Generate SQL (AI)"}</span>
+            </button>
             </div>
           </div>
         </div>
@@ -323,6 +393,31 @@ function CanvasInner() {
           />
         </ReactFlow>
       </div>
+
+      {/* SQL Preview Modal */}
+      {sqlPreview !== null && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-3xl bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
+              <div>
+                <p className="text-sm uppercase tracking-wider text-mocha-subtext0">SQL Preview</p>
+                <p className="text-mocha-text font-semibold">
+                  {sqlSource === "ai" ? "AI Generated SQL" : "Schema SQL"}
+                </p>
+              </div>
+              <button
+                onClick={() => setSqlPreview(null)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-6 max-h-[70vh] overflow-auto font-mono text-sm text-mocha-subtext1 whitespace-pre-wrap bg-mocha-base/60">
+              {sqlPreview}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

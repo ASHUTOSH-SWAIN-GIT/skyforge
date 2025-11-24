@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/compiler"
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )
@@ -31,77 +32,42 @@ func NewAIService() (*AIService, error) {
 	return &AIService{client: client, model: model}, nil
 }
 
-// Define clean structs to send to AI (We exclude positions/handles to save tokens)
-type CleanNode struct {
-	Table   string        `json:"table"`
-	Columns []CleanColumn `json:"columns"`
-}
-
-type CleanColumn struct {
-	Name         string `json:"name"`
-	Type         string `json:"type"`
-	IsPrimaryKey bool   `json:"is_pk"`
-	IsUnique     bool   `json:"is_unique"`
-}
-
-type CleanEdge struct {
-	FromTable string `json:"from_table"`
-	ToTable   string `json:"to_table"`
-	RelType   string `json:"relationship"` // e.g. "one-to-many"
-}
-
 // The Main Function
 func (s *AIService) GenerateSQLFromGraph(rawJSON []byte) (string, error) {
-	// 1. Parse Raw JSON (from React Flow)
-	// We map the raw structure to our Clean structure
-	var rawGraph struct {
-		Nodes []struct {
-			Data struct {
-				Label   string `json:"label"`
-				Columns []struct {
-					Name         string `json:"name"`
-					Type         string `json:"type"`
-					IsPrimaryKey bool   `json:"isPrimaryKey"`
-					IsUnique     bool   `json:"isUnique"`
-				} `json:"columns"`
-			} `json:"data"`
-		} `json:"nodes"`
-		Edges []struct {
-			Source string `json:"source"`
-			Target string `json:"target"`
-		} `json:"edges"`
-	}
-
-	if err := json.Unmarshal(rawJSON, &rawGraph); err != nil {
+	schema, err := compiler.BuildSchema(rawJSON)
+	if err != nil {
 		return "", err
 	}
-
-	// 2. Build Clean Context
-	// Map node IDs to Table Names for edges
-	// (Simplified logic: In prod, map IDs correctly)
-	cleanData := map[string]interface{}{
-		"tables":    rawGraph.Nodes,
-		"relations": rawGraph.Edges, // Note: You might need to resolve ID -> Label mapping here if Edges use IDs
+	if len(schema.Tables) == 0 {
+		return "", fmt.Errorf("no tables defined in canvas")
 	}
 
-	promptData, _ := json.MarshalIndent(cleanData, "", "  ")
+	promptPayload := struct {
+		Summary string           `json:"summary"`
+		Schema  *compiler.Schema `json:"schema"`
+	}{
+		Summary: "Normalized ER graph captured from Skyforge canvas. Use table+column names exactly as provided.",
+		Schema:  schema,
+	}
 
-	// 3. Construct Prompt
+	promptData, _ := json.MarshalIndent(promptPayload, "", "  ")
+
 	prompt := fmt.Sprintf(`
-		You are a Senior Database Architect. 
-		Convert the following JSON representation of a database schema into production-ready PostgreSQL SQL code.
-		
-		Rules:
-		1. Use CREATE TABLE statements.
-		2. Add appropriate Foreign Key constraints.
-		3. Add comments explaining complex relationships.
-		4. Return ONLY the SQL code. No markdown formatting (no backticks), no conversational text.
-		
-		JSON Schema Input:
-		%s
-	`, string(promptData))
+You are a meticulous Senior Database Architect. Convert the provided JSON schema into high-quality PostgreSQL DDL.
 
-	// 4. Call Gemini
+Requirements:
+1. Emit CREATE TABLE statements for every table.
+2. Use column definitions exactly as provided (names + data types). Default to TEXT only when the type is omitted.
+3. Apply NOT NULL and UNIQUE constraints when indicated.
+4. Add PRIMARY KEY clauses using the provided primary columns.
+5. Add FOREIGN KEY constraints for every relation. Use meaningful constraint names.
+6. Include INDEX statements when a foreign-key column is not part of the primary key.
+7. Return ONLY executable SQL (no explanations, no Markdown, no backticks).
+
+JSON Schema:
+%s
+`, string(promptData))
+
 	ctx := context.Background()
 	resp, err := s.model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
