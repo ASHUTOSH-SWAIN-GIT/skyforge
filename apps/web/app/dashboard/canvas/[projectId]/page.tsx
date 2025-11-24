@@ -16,9 +16,9 @@ import ReactFlow, {
   applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { getProject, updateProject, exportProjectSQL, exportProjectSQLAI } from "../../../../lib/projects";
+import { getProject, updateProject, exportProjectSQL, exportProjectSQLAI, importSQL } from "../../../../lib/projects";
 import { Project } from "../../../../types";
-import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code, ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code, ChevronLeft, ChevronRight, Save, Upload } from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
 
@@ -37,6 +37,8 @@ function CanvasInner() {
   const [sqlPreview, setSqlPreview] = useState<string | null>(null);
   const [sqlSource, setSqlSource] = useState<"standard" | "ai">("standard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     nodes,
@@ -153,6 +155,52 @@ function CanvasInner() {
     fitView({ padding: 0.2 });
   }, [fitView]);
 
+  const handleImportSQL = useCallback(async (file: File) => {
+    if (!project) return;
+    
+    try {
+      setIsImporting(true);
+      const updatedProject = await importSQL(projectId, file);
+      setProject(updatedProject);
+      
+      // Load the imported data into canvas
+      if (updatedProject.data) {
+        try {
+          const canvasData = typeof updatedProject.data === "string" 
+            ? JSON.parse(updatedProject.data) 
+            : updatedProject.data;
+          if (canvasData && (canvasData.nodes || canvasData.edges)) {
+            loadFromData(canvasData);
+            // Fit view after import
+            setTimeout(() => fitView({ padding: 0.2 }), 100);
+          }
+        } catch (error) {
+          console.error("Failed to parse imported canvas data", error);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to import SQL", error);
+      alert(error instanceof Error ? error.message : "Failed to import SQL file");
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [project, projectId, loadFromData, fitView]);
+
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.name.endsWith('.sql')) {
+      handleImportSQL(file);
+    } else {
+      alert("Please select a valid SQL file (.sql)");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }, [handleImportSQL]);
+
   const handleExport = useCallback(async (mode: "standard" | "ai") => {
     if (!project) return;
     try {
@@ -250,6 +298,27 @@ function CanvasInner() {
                 </div>
                 <span>New Table</span>
               </button>
+              
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".sql"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  disabled={isImporting}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-mocha-text bg-mocha-surface0/30 hover:bg-mocha-surface0/80 hover:scale-[1.02] rounded-xl transition-all duration-200 border border-mocha-surface0 shadow-sm group disabled:opacity-50"
+                >
+                  <div className="p-1.5 rounded-lg bg-mocha-green/10 text-mocha-green group-hover:bg-mocha-green/20 transition-colors">
+                    <Upload className="w-5 h-5" />
+                  </div>
+                  <span>{isImporting ? "Importing..." : "Import SQL"}</span>
+                </button>
+              </div>
             </div>
 
             {/* View Controls */}
@@ -368,26 +437,47 @@ function CanvasInner() {
             }}
             onConnect={(connection: Connection) => {
               // Only allow connections between column handles, not node-level connections
-              if (!connection.source || !connection.target) return;
+              if (!connection.source || !connection.target) {
+                console.warn("Missing source or target", connection);
+                return;
+              }
               if (!connection.sourceHandle || !connection.targetHandle) {
-                console.warn("Connections must be made between specific columns");
+                console.warn("Connections must be made between specific columns", connection);
                 return;
               }
               
+              const edgeId = `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`;
               const newEdge = {
-                id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`,
+                id: edgeId,
                 source: connection.source,
                 target: connection.target,
                 sourceHandle: connection.sourceHandle,
                 targetHandle: connection.targetHandle,
                 type: "smoothstep" as const,
                 animated: true,
-                style: { stroke: "#b4befe", strokeWidth: 2, strokeDasharray: "5 5" },
+                style: { 
+                  stroke: "#b4befe", 
+                  strokeWidth: 2, 
+                  strokeDasharray: "5 5",
+                },
               };
-              setEdges([...edges, newEdge]);
+              
+              console.log("Creating edge:", newEdge);
+              const updated = [...edges, newEdge];
+              console.log("Updated edges:", updated);
+              setEdges(updated);
             }}
             onPaneClick={handlePaneClick}
             nodeTypes={nodeTypes}
+            defaultEdgeOptions={{
+              type: "smoothstep",
+              animated: true,
+              style: {
+                stroke: "#b4befe",
+                strokeWidth: 2,
+                strokeDasharray: "5 5",
+              },
+            }}
             fitView
             className="bg-mocha-base"
           >

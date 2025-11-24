@@ -1,30 +1,17 @@
+Skyforge Dashboard Improvement Prompt
 
+Improve the dashboard page by keeping the Catppuccin Mocha theme consistent and cozy while avoiding corporate SaaS design patterns. Focus on aesthetic clarity, personal feel, and soft interactions.
 
-## **Skyforge Canvas Page Improvement Prompt**
+Increase top padding under the Workspace heading and adjust grid spacing so the project cards feel more centered and breathable. Add slightly larger vertical spacing between card rows and widen the card grid horizontally to prevent cards from looking too compressed. Add a subtle horizontal separator or a faint tinted background behind the project card section to create gentle structure without looking heavy.
 
-Improve the canvas page with a focus on personal project aesthetics rather than corporate SaaS styling. Keep the Catppuccin Mocha theme consistent, soft, and cozy. Make the UI enjoyable, minimal, and visually satisfying.
+Enhance the project cards by giving them a soft gradient from Surface1 to Surface0, a subtle inner border, and a smooth hover effect that adds a gentle lift or glow. Make the database type pill slightly larger, and improve the initial icon design with a better accent color and cleaner shape. Add a tiny three dot menu on the top right of each card for future actions.
 
-Apply the following changes across the canvas:
+Make the Create New Project card visually distinct by using a lighter Surface tint, a slightly larger plus icon, and a soft pulse or glow on hover. It should feel playful and inviting rather than looking like a normal project card.
 
-Enhance the left sidebar by improving spacing between sections, slightly increasing padding on buttons, and making section titles clearer without heavy borders. Add subtle hover accents using Lavender or Mauve. Keep the design simple rather than enterprise. Buttons should have a soft glow or scale effect on hover.
+Refine the sidebar by increasing spacing between items, adding clearer active item styling with a soft accent bar, and using slightly brighter icons while keeping text muted. Maintain a minimalist structure but improve readability and hover feedback.
 
-Improve the table nodes with more visual structure. Add a soft gradient or slight blur in the background using Surface1 and Surface0. Use rounded corners, a subtle inner border, and cleaner spacing between rows. Use Catppuccin accent colors for PK, FK, NN icons. Add gentle micro animations when tables appear or when users hover.
+Consider adding a small optional top utility strip with a transparent Mantle background and slight blur. This bar can include search, settings, or a tiny New Project button, but keep it minimal and aligned with the theme.
 
-Make relationship lines smoother by adding light curvature, more consistent dotted patterns, and a soft Lavender tinted glow on hover. When dragging a connection, animate the line slightly so it feels dynamic. Keep the lines minimal and aesthetic rather than strict.
+Tighten bottom spacing so the layout does not have unnecessary empty space. Improve typography by adjusting line height of the subtitle, slightly increasing the project title weight, and using Subtext0 for descriptions to improve hierarchy.
 
-Improve the zoom controls by making them small, rounded, and low opacity. Have them fade in on hover for a minimal interface look. Keep them simple rather than like professional PDF toolbars.
-
-Consider adding a faint optional grid using Surface1 with very low opacity or show the grid only while dragging nodes to keep the canvas clean. Only include it if it improves comfort during placement.
-
-Add a tiny floating utility bubble somewhere non intrusive. It can include actions like Fit View, Undo, Redo, or Toggle Grid. Keep it minimal and rounded with Catppuccin surfaces and subtle glow on hover.
-
-Increase canvas padding so nodes do not touch edges. Ensure the canvas feels open and breathable. Adjust view fit behavior to keep spacing comfortable.
-
-Make the bottom right logo softer by reducing brightness and increasing corner rounding. Optionally hide or fade it when dragging or zooming so it does not distract.
-
-Keep animations gentle: slight drop when a node is created, small glow on relation endpoints on hover, soft transitions everywhere. Avoid anything too corporate or too loud.
-
-Throughout the canvas, emphasize Catppuccin Mocha colors: Surface layers, Mauve or Lavender accents, gentle glows, and soft shadows. Maintain a consistent cozy dark look rather than a strict business application style.
-
----
-
+Add gentle micro animations: fade in cards on load, smooth transitions on hover, and subtle scaling effects that make the dashboard feel alive without being overdone. Stay consistent with Catppuccin Mocha by using Surface layers, Lavender or Mauve accents, soft shadows, and rounded corners throughout. Keep everything personal, cozy, and pleasant to use.

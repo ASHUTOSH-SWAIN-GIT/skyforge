@@ -113,16 +113,17 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
               position={Position.Left}
               id={`${column.id}-target`}
               style={{
-                width: 10,
-                height: 10,
+                width: 12,
+                height: 12,
                 background: column.isPrimaryKey ? "#f9e2af" : "#bac2de",
                 border: "2px solid #1e1e2e",
                 borderRadius: "50%",
                 cursor: "crosshair",
                 left: -6,
                 zIndex: 20,
+                opacity: 0.6,
               }}
-              className="!opacity-0 group-hover:!opacity-100 transition-opacity duration-200"
+              className="group-hover:!opacity-100 group-hover:!scale-125 transition-all duration-200"
             />
 
             {/* Key Icon - Clickable */}
@@ -232,16 +233,17 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
               position={Position.Right}
               id={`${column.id}-source`}
               style={{
-                width: 10,
-                height: 10,
+                width: 12,
+                height: 12,
                 background: column.isPrimaryKey ? "#f9e2af" : "#bac2de",
                 border: "2px solid #1e1e2e",
                 borderRadius: "50%",
                 cursor: "crosshair",
                 right: -6,
                 zIndex: 20,
+                opacity: 0.6,
               }}
-              className="!opacity-0 group-hover:!opacity-100 transition-opacity duration-200"
+              className="group-hover:!opacity-100 group-hover:!scale-125 transition-all duration-200"
             />
           </div>
         ))}

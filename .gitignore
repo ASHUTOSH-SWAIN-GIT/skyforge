@@ -43,3 +43,12 @@ tmp/
 
 # Build outputs
 bin/
+
+# Cursor IDE
+.cursor/
+
+# Makefiles
+Makefile
+makefile
+**/Makefile
+**/makefile

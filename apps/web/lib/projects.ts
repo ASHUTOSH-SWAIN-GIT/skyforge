@@ -56,3 +56,24 @@ export async function updateProject(
     });
 }
 
+export async function importSQL(projectId: string, file: File): Promise<Project> {
+    const formData = new FormData();
+    formData.append("sqlFile", file);
+
+    const res = await fetch(`/api/projects/${projectId}/import-sql`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+    });
+
+    if (!res.ok) {
+        if (res.status === 401) {
+            window.location.href = "/login";
+        }
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to import SQL");
+    }
+
+    return res.json();
+}
+

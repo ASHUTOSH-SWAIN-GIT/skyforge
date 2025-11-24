@@ -265,6 +265,78 @@ func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Requ
 	w.Write([]byte(sqlScript))
 }
 
+func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	if err != nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	if project.UserID != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	// Parse multipart form
+	if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max
+		http.Error(w, "Failed to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, header, err := r.FormFile("sqlFile")
+	if err != nil {
+		http.Error(w, "No file uploaded", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Read file content
+	sqlContent := make([]byte, header.Size)
+	if _, err := file.Read(sqlContent); err != nil {
+		http.Error(w, "Failed to read file", http.StatusInternalServerError)
+		return
+	}
+
+	// Parse SQL and convert to canvas format
+	canvasData, err := compiler.ImportSQL(string(sqlContent))
+	if err != nil {
+		http.Error(w, "Failed to import SQL: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Update project with imported canvas data
+	updatedProject, err := h.DB.UpdateProjectData(r.Context(), database.UpdateProjectDataParams{
+		ID:     projectID,
+		UserID: userID,
+		Data:   canvasData,
+	})
+	if err != nil {
+		http.Error(w, "Failed to update project", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(updatedProject)
+}
+
 func (h *ProjectHandler) authorize(r *http.Request) (uuid.UUID, error) {
 	cookie, err := r.Cookie("auth_token")
 	if err != nil {
