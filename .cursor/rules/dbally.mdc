@@ -1,6 +1,5 @@
 ---
 alwaysApply: true
----
-- use Gemini 3.0 model for frontend designing 
+--- 
 - dont use emojis in the code 
 - dont run any terminal command automatically 

@@ -1,43 +1,30 @@
-Create a professional Database Schema Design Canvas using React, Tailwind CSS, and Lucide React icons. The aesthetic should be "Linear-style" dark mode: technical, high-contrast, and clean.
 
-The layout consists of a full-screen infinite grid background with interactive "Table Nodes" and a floating toolbar.
 
-1. THE CANVAS BACKGROUND:
-- Use a dark gray background (zinc-950).
-- Overlay a subtle dot pattern or grid pattern (opacity 20%) to represent an infinite workspace.
+## **Skyforge Canvas Page Improvement Prompt**
 
-2. THE CUSTOM "TABLE NODE" (The most important part):
-- Create a card component representing a Database Table.
-- Style: Rounded-xl, border-zinc-800, bg-zinc-900, shadow-lg.
-- Header:
-  - Table Name (e.g., "users", "orders") in bold, white text.
-  - A small "More Options" (...) button on the right.
-  - A bottom border separating header from columns.
-- Body (Column List):
-  - Render a list of database columns.
-  - Each row should have:
-    - Left and Right "Handle" dots (visual indicators for connecting lines).
-    - A "Key" icon if it is a Primary Key (PK) (color gold/yellow).
-    - Column Name (e.g., "id", "email") in white.
-    - Data Type (e.g., "uuid", "varchar") in a muted mono-space font (text-zinc-500).
-    - Constraint badges (e.g., "NN", "U") on the right side.
-- Footer:
-  - A full-width "Add Column" button that appears on hover, subtle and minimalist.
+Improve the canvas page with a focus on personal project aesthetics rather than corporate SaaS styling. Keep the Catppuccin Mocha theme consistent, soft, and cozy. Make the UI enjoyable, minimal, and visually satisfying.
 
-3. THE FLOATING TOOLBAR (Bottom Center):
-- A pill-shaped floating menu with a blur effect (bg-zinc-900/80 backdrop-blur).
-- Buttons for:
-  - "Add Table" (Plus icon).
-  - "Auto Layout" (Wand icon).
-  - "Zoom In" / "Zoom Out" / "Fit View".
-  - "Export SQL" (Code icon, accented color like indigo-500).
+Apply the following changes across the canvas:
 
-4. MOCK DATA:
-- Render 2-3 tables connected by lines (visualize the edges).
-- Table 1: "users" (id, email, password, created_at).
-- Table 2: "posts" (id, title, content, user_id [FK]).
+Enhance the left sidebar by improving spacing between sections, slightly increasing padding on buttons, and making section titles clearer without heavy borders. Add subtle hover accents using Lavender or Mauve. Keep the design simple rather than enterprise. Buttons should have a soft glow or scale effect on hover.
 
-5. STYLE GUIDE:
-- Use 'zinc' for grays.
-- Use 'indigo' for primary actions and active states.
-- Use a font that looks technical (Inter or a sans-serif).
+Improve the table nodes with more visual structure. Add a soft gradient or slight blur in the background using Surface1 and Surface0. Use rounded corners, a subtle inner border, and cleaner spacing between rows. Use Catppuccin accent colors for PK, FK, NN icons. Add gentle micro animations when tables appear or when users hover.
+
+Make relationship lines smoother by adding light curvature, more consistent dotted patterns, and a soft Lavender tinted glow on hover. When dragging a connection, animate the line slightly so it feels dynamic. Keep the lines minimal and aesthetic rather than strict.
+
+Improve the zoom controls by making them small, rounded, and low opacity. Have them fade in on hover for a minimal interface look. Keep them simple rather than like professional PDF toolbars.
+
+Consider adding a faint optional grid using Surface1 with very low opacity or show the grid only while dragging nodes to keep the canvas clean. Only include it if it improves comfort during placement.
+
+Add a tiny floating utility bubble somewhere non intrusive. It can include actions like Fit View, Undo, Redo, or Toggle Grid. Keep it minimal and rounded with Catppuccin surfaces and subtle glow on hover.
+
+Increase canvas padding so nodes do not touch edges. Ensure the canvas feels open and breathable. Adjust view fit behavior to keep spacing comfortable.
+
+Make the bottom right logo softer by reducing brightness and increasing corner rounding. Optionally hide or fade it when dragging or zooming so it does not distract.
+
+Keep animations gentle: slight drop when a node is created, small glow on relation endpoints on hover, soft transitions everywhere. Avoid anything too corporate or too loud.
+
+Throughout the canvas, emphasize Catppuccin Mocha colors: Surface layers, Mauve or Lavender accents, gentle glows, and soft shadows. Maintain a consistent cozy dark look rather than a strict business application style.
+
+---
+

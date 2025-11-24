@@ -219,99 +219,111 @@ function CanvasInner() {
     <div className="h-screen w-screen bg-mocha-base relative flex overflow-hidden">
       {/* Collapsible Sidebar */}
       <div
-        className={`h-full bg-mocha-mantle border-r border-mocha-surface0 transition-all duration-300 ease-in-out flex-shrink-0 ${
-          isSidebarOpen ? "w-64" : "w-0"
-        } overflow-hidden`}
+        className={`h-full bg-mocha-mantle/50 backdrop-blur-sm border-r border-mocha-surface0 transition-all duration-300 ease-in-out flex-shrink-0 ${
+          isSidebarOpen ? "w-72" : "w-0"
+        } overflow-hidden shadow-2xl z-30`}
       >
         <div className={`h-full flex flex-col ${isSidebarOpen ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}>
           {/* Sidebar Header */}
-          <div className="p-4 border-b border-mocha-surface0 flex items-center justify-between">
-            <h2 className="text-mocha-text font-semibold text-sm">Tools</h2>
+          <div className="p-6 border-b border-mocha-surface0 flex items-center justify-between bg-mocha-mantle/30">
+            <h2 className="text-mocha-text font-bold text-lg tracking-tight">Canvas Tools</h2>
             <button
               onClick={() => setIsSidebarOpen(false)}
-              className="p-1.5 hover:bg-mocha-surface0 rounded transition-colors text-mocha-subtext0 hover:text-mocha-text"
+              className="p-2 hover:bg-mocha-surface0 rounded-lg transition-colors text-mocha-subtext0 hover:text-mocha-text"
               title="Collapse Sidebar"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
           </div>
 
           {/* Sidebar Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-8">
             {/* Table Actions */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-mocha-subtext1 uppercase tracking-wider">Tables</h3>
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1">Structure</h3>
               <button
                 onClick={handleAddTable}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-mocha-text bg-mocha-surface0/30 hover:bg-mocha-surface0/80 hover:scale-[1.02] rounded-xl transition-all duration-200 border border-mocha-surface0 shadow-sm group"
               >
-                <Plus className="w-4 h-4" />
-                <span>Add Table</span>
+                <div className="p-1.5 rounded-lg bg-mocha-blue/10 text-mocha-blue group-hover:bg-mocha-blue/20 transition-colors">
+                  <Plus className="w-5 h-5" />
+                </div>
+                <span>New Table</span>
               </button>
             </div>
 
             {/* View Controls */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-mocha-subtext1 uppercase tracking-wider">View</h3>
-              <div className="space-y-1.5">
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1">View</h3>
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => zoomIn()}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                  className="flex flex-col items-center justify-center gap-2 p-3 text-xs font-medium text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
                 >
-                  <ZoomIn className="w-4 h-4" />
+                  <ZoomIn className="w-5 h-5" />
                   <span>Zoom In</span>
                 </button>
                 <button
                   onClick={() => zoomOut()}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                  className="flex flex-col items-center justify-center gap-2 p-3 text-xs font-medium text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
                 >
-                  <ZoomOut className="w-4 h-4" />
+                  <ZoomOut className="w-5 h-5" />
                   <span>Zoom Out</span>
                 </button>
                 <button
                   onClick={handleFitView}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                  className="flex flex-col items-center justify-center gap-2 p-3 text-xs font-medium text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
                 >
-                  <Maximize2 className="w-4 h-4" />
+                  <Maximize2 className="w-5 h-5" />
                   <span>Fit View</span>
                 </button>
                 <button
                   onClick={handleFitView}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0"
+                  className="flex flex-col items-center justify-center gap-2 p-3 text-xs font-medium text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
                 >
-                  <Wand2 className="w-4 h-4" />
-                  <span>Auto Layout</span>
+                  <Wand2 className="w-5 h-5" />
+                  <span>Auto</span>
                 </button>
               </div>
             </div>
 
             {/* Actions */}
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-mocha-subtext1 uppercase tracking-wider">Actions</h3>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-mauve hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Save className="w-4 h-4" />
-                <span>{isSaving ? "Saving..." : "Save Project"}</span>
-              </button>
-            <button
-              onClick={() => handleExport("standard")}
-              disabled={isExporting}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Code className="w-4 h-4" />
-              <span>{isExporting && sqlSource === "standard" ? "Generating..." : "Generate SQL"}</span>
-            </button>
-            <button
-              onClick={() => handleExport("ai")}
-              disabled={isExporting}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Wand2 className="w-4 h-4" />
-              <span>{isExporting && sqlSource === "ai" ? "Generating..." : "Generate SQL (AI)"}</span>
-            </button>
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1">Export</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-mocha-mauve bg-mocha-mauve/10 hover:bg-mocha-mauve/20 rounded-xl transition-all border border-mocha-mauve/20 hover:border-mocha-mauve/40 disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSaving ? "Saving..." : "Save Project"}</span>
+                </button>
+                
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => handleExport("standard")}
+                    disabled={isExporting}
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Code className="w-4 h-4" />
+                      <span>SQL</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => handleExport("ai")}
+                    disabled={isExporting}
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Wand2 className="w-4 h-4 text-mocha-pink" />
+                      <span>AI SQL</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-mocha-pink/20 text-mocha-pink uppercase">Beta</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -340,56 +352,60 @@ function CanvasInner() {
           </button>
         </div>
 
-        {/* React Flow Canvas */}
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={(changes: NodeChange[]) => {
-            // Apply changes using React Flow's utility
-            const updatedNodes = applyNodeChanges(changes, nodes);
-            setNodes(updatedNodes);
-          }}
-          onEdgesChange={(changes: EdgeChange[]) => {
-            // Apply changes using React Flow's utility
-            const updatedEdges = applyEdgeChanges(changes, edges);
-            setEdges(updatedEdges);
-          }}
-          onConnect={(connection: Connection) => {
-            // Only allow connections between column handles, not node-level connections
-            if (!connection.source || !connection.target) return;
-            if (!connection.sourceHandle || !connection.targetHandle) {
-              console.warn("Connections must be made between specific columns");
-              return;
-            }
-            
-            const newEdge = {
-              id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`,
-              source: connection.source,
-              target: connection.target,
-              sourceHandle: connection.sourceHandle,
-              targetHandle: connection.targetHandle,
-              type: "smoothstep" as const,
-              animated: true,
-              style: { stroke: "#cba6f7", strokeWidth: 2 },
-            };
-            setEdges([...edges, newEdge]);
-          }}
-          onPaneClick={handlePaneClick}
-          nodeTypes={nodeTypes}
-          fitView
-          className="bg-mocha-base"
-        >
+          {/* React Flow Canvas */}
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={(changes: NodeChange[]) => {
+              // Apply changes using React Flow's utility
+              const updatedNodes = applyNodeChanges(changes, nodes);
+              setNodes(updatedNodes);
+            }}
+            onEdgesChange={(changes: EdgeChange[]) => {
+              // Apply changes using React Flow's utility
+              const updatedEdges = applyEdgeChanges(changes, edges);
+              setEdges(updatedEdges);
+            }}
+            onConnect={(connection: Connection) => {
+              // Only allow connections between column handles, not node-level connections
+              if (!connection.source || !connection.target) return;
+              if (!connection.sourceHandle || !connection.targetHandle) {
+                console.warn("Connections must be made between specific columns");
+                return;
+              }
+              
+              const newEdge = {
+                id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`,
+                source: connection.source,
+                target: connection.target,
+                sourceHandle: connection.sourceHandle,
+                targetHandle: connection.targetHandle,
+                type: "smoothstep" as const,
+                animated: true,
+                style: { stroke: "#b4befe", strokeWidth: 2, strokeDasharray: "5 5" },
+              };
+              setEdges([...edges, newEdge]);
+            }}
+            onPaneClick={handlePaneClick}
+            nodeTypes={nodeTypes}
+            fitView
+            className="bg-mocha-base"
+          >
           <Background
             color="#313244"
-            gap={20}
-            size={1}
-            style={{ opacity: 0.2 }}
+            gap={24}
+            size={2}
+            style={{ opacity: 0.1 }}
           />
-          <Controls className="bg-mocha-mantle border border-mocha-surface0" />
+          <Controls 
+            className="!bg-mocha-mantle/80 !border-mocha-surface0 !rounded-xl !shadow-lg backdrop-blur-sm m-4 !p-1" 
+            showInteractive={false}
+          />
           <MiniMap
-            className="bg-mocha-mantle border border-mocha-surface0"
+            className="!bg-mocha-mantle/80 !border-mocha-surface0 !rounded-xl !shadow-lg backdrop-blur-sm m-4"
             nodeColor="#cba6f7"
             maskColor="#1e1e2e"
+            style={{ opacity: 0.7 }}
           />
         </ReactFlow>
       </div>

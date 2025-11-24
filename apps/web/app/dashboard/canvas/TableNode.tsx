@@ -59,9 +59,9 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
   };
 
   return (
-    <div className="bg-mocha-mantle border border-mocha-surface0 rounded-xl shadow-lg min-w-[280px]">
+    <div className="bg-mocha-mantle/80 backdrop-blur-sm border border-mocha-surface0 rounded-2xl shadow-xl min-w-[280px] overflow-hidden transition-all duration-300 hover:shadow-mocha-mauve/5 animate-in fade-in zoom-in-95">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-mocha-surface0">
+      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-mocha-surface0/50 to-transparent border-b border-mocha-surface0">
         {isEditingName ? (
           <input
             ref={nameInputRef}
@@ -104,7 +104,7 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
         {data.columns.map((column: Column) => (
           <div
             key={column.id}
-            className="flex items-center gap-2 px-4 py-2 hover:bg-mocha-surface0/50 transition-colors group relative"
+            className="flex items-center gap-2 px-4 py-2.5 hover:bg-mocha-surface0/40 transition-colors group relative"
             title="Drag from right handle to connect, or connect to left handle"
           >
             {/* Left Handle - Target (for incoming connections) */}
@@ -113,16 +113,16 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
               position={Position.Left}
               id={`${column.id}-target`}
               style={{
-                width: 16,
-                height: 16,
-                background: column.isPrimaryKey ? "#f9e2af" : "#6c7086",
+                width: 10,
+                height: 10,
+                background: column.isPrimaryKey ? "#f9e2af" : "#bac2de",
                 border: "2px solid #1e1e2e",
                 borderRadius: "50%",
                 cursor: "crosshair",
-                left: -8,
-                zIndex: 10,
+                left: -6,
+                zIndex: 20,
               }}
-              className="group-hover:!bg-mocha-mauve group-hover:!scale-125 transition-all"
+              className="!opacity-0 group-hover:!opacity-100 transition-opacity duration-200"
             />
 
             {/* Key Icon - Clickable */}
@@ -232,16 +232,16 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
               position={Position.Right}
               id={`${column.id}-source`}
               style={{
-                width: 16,
-                height: 16,
-                background: column.isPrimaryKey ? "#f9e2af" : "#6c7086",
+                width: 10,
+                height: 10,
+                background: column.isPrimaryKey ? "#f9e2af" : "#bac2de",
                 border: "2px solid #1e1e2e",
                 borderRadius: "50%",
                 cursor: "crosshair",
-                right: -8,
-                zIndex: 10,
+                right: -6,
+                zIndex: 20,
               }}
-              className="group-hover:!bg-mocha-mauve group-hover:!scale-125 transition-all"
+              className="!opacity-0 group-hover:!opacity-100 transition-opacity duration-200"
             />
           </div>
         ))}
