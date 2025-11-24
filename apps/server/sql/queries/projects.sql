@@ -29,3 +29,10 @@ SET name = $2,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;
+
+-- name: UpdateProjectData :one
+UPDATE projects
+SET data = $3,
+    updated_at = NOW()
+WHERE id = $1 AND user_id = $2
+RETURNING *;

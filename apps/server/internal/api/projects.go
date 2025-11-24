@@ -4,19 +4,25 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
-	"strings"
 
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/ai"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/auth"
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/compiler"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
 	"github.com/google/uuid"
 )
 
 type ProjectHandler struct {
 	DB *database.Queries
+	AI *ai.AIService
 }
 
 func NewProjectHandler(db *database.Queries) *ProjectHandler {
-	return &ProjectHandler{DB: db}
+	aiService, _ := ai.NewAIService()
+	return &ProjectHandler{
+		DB: db,
+		AI: aiService,
+	}
 }
 
 type CreateProjectRequest struct {
@@ -31,21 +37,12 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get userid from the cookie
-	cookie, err := r.Cookie("auth_token")
+	userID, err := h.authorize(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	userIDStr, err := auth.ValidateJWT(cookie.Value)
-	if err != nil {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
-	userID, _ := uuid.Parse(userIDStr)
-
-	// parse request body
 	var req CreateProjectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -57,39 +54,27 @@ func (h *ProjectHandler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insert the data into the database
 	project, err := h.DB.CreateProject(r.Context(), database.CreateProjectParams{
 		UserID:      userID,
 		Name:        req.Name,
 		Description: sql.NullString{String: req.Description, Valid: req.Description != ""},
-		Data:        []byte("{}"), // Empty React Flow graph
+		Data:        []byte("{}"),
 	})
 	if err != nil {
 		http.Error(w, "Failed to create project", http.StatusInternalServerError)
 		return
 	}
 
-	// TODO: Handle Collaborators logic here (Requires a 'project_collaborators' table)
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(project)
 }
 
 func (h *ProjectHandler) GetMyProjects(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("auth_token")
+	userID, err := h.authorize(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
-	userIDStr, err := auth.ValidateJWT(cookie.Value)
-	if err != nil {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
-	userID, _ := uuid.Parse(userIDStr)
-
-	// fetch projects
 
 	projects, err := h.DB.GetProjectsByUser(r.Context(), userID)
 	if err != nil {
@@ -107,54 +92,40 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get userid from the cookie
-	cookie, err := r.Cookie("auth_token")
+	userID, err := h.authorize(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	userIDStr, err := auth.ValidateJWT(cookie.Value)
-	if err != nil {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
-	_, _ = uuid.Parse(userIDStr)
-
-	// get project ID from URL path
-	pathParts := strings.TrimPrefix(r.URL.Path, "/projects/")
-	if pathParts == "" || pathParts == r.URL.Path {
-		http.Error(w, "Invalid project ID", http.StatusBadRequest)
-		return
-	}
-
-	// Extract just the project ID (in case there are query params or trailing slashes)
-	projectIDStr := strings.Split(pathParts, "/")[0]
-	projectIDStr = strings.Split(projectIDStr, "?")[0]
-
+	projectIDStr := r.PathValue("id")
 	projectID, err := uuid.Parse(projectIDStr)
 	if err != nil {
 		http.Error(w, "Invalid project ID", http.StatusBadRequest)
 		return
 	}
 
-	// fetch project
 	project, err := h.DB.GetProjectByID(r.Context(), projectID)
 	if err != nil {
-		http.Error(w, "Project not found", http.StatusNotFound)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Project not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
-	// TODO: Check if user has access to this project (owner or collaborator)
+	if project.UserID != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(project)
 }
 
 type UpdateProjectRequest struct {
-	Name        *string `json:"name"`
-	Description *string `json:"description"`
-	Data        *string `json:"data"`
+	Data json.RawMessage `json:"data"`
 }
 
 func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
@@ -163,80 +134,118 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get userid from the cookie
-	cookie, err := r.Cookie("auth_token")
+	userID, err := h.authorize(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	userIDStr, err := auth.ValidateJWT(cookie.Value)
-	if err != nil {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
-	_, _ = uuid.Parse(userIDStr)
-
-	// get project ID from URL path
-	pathParts := strings.TrimPrefix(r.URL.Path, "/projects/")
-	if pathParts == "" || pathParts == r.URL.Path {
-		http.Error(w, "Invalid project ID", http.StatusBadRequest)
-		return
-	}
-
-	projectIDStr := strings.Split(pathParts, "/")[0]
-	projectIDStr = strings.Split(projectIDStr, "?")[0]
-
+	projectIDStr := r.PathValue("id")
 	projectID, err := uuid.Parse(projectIDStr)
 	if err != nil {
 		http.Error(w, "Invalid project ID", http.StatusBadRequest)
 		return
 	}
 
-	// parse request body
 	var req UpdateProjectRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	// Get existing project
-	existingProject, err := h.DB.GetProjectByID(r.Context(), projectID)
-	if err != nil {
-		http.Error(w, "Project not found", http.StatusNotFound)
-		return
-	}
-
-	// TODO: Check if user has access to this project (owner or collaborator)
-
-	// Prepare update params - use provided values or keep existing
-	name := existingProject.Name
-	if req.Name != nil && *req.Name != "" {
-		name = *req.Name
-	}
-
-	description := existingProject.Description
-	if req.Description != nil {
-		description = sql.NullString{String: *req.Description, Valid: *req.Description != ""}
-	}
-
-	data := existingProject.Data
-	if req.Data != nil {
-		data = []byte(*req.Data)
-	}
-
-	// Update project
-	project, err := h.DB.UpdateProject(r.Context(), database.UpdateProjectParams{
-		ID:          projectID,
-		Name:        name,
-		Description: description,
-		Data:        data,
+	project, err := h.DB.UpdateProjectData(r.Context(), database.UpdateProjectDataParams{
+		ID:     projectID,
+		UserID: userID,
+		Data:   req.Data,
 	})
 	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Project not found or access denied", http.StatusForbidden)
+			return
+		}
 		http.Error(w, "Failed to update project", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(project)
+}
+
+func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, _ := uuid.Parse(projectIDStr)
+
+	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	if err != nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	if project.UserID != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	sqlScript, err := compiler.GenerateSQL(project.Data)
+	if err != nil {
+		http.Error(w, "Failed to generate SQL: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(sqlScript))
+}
+
+func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, _ := uuid.Parse(projectIDStr)
+
+	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	if err != nil {
+		http.Error(w, "Project not found", http.StatusNotFound)
+		return
+	}
+
+	if project.UserID != userID {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	if h.AI == nil {
+		http.Error(w, "AI Service not configured (Missing API Key)", http.StatusServiceUnavailable)
+		return
+	}
+
+	sqlScript, err := h.AI.GenerateSQLFromGraph(project.Data)
+	if err != nil {
+		http.Error(w, "AI Generation failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(sqlScript))
+}
+
+func (h *ProjectHandler) authorize(r *http.Request) (uuid.UUID, error) {
+	cookie, err := r.Cookie("auth_token")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	userIDStr, err := auth.ValidateJWT(cookie.Value)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return uuid.Parse(userIDStr)
 }
