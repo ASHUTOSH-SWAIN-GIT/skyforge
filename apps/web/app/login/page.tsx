@@ -2,37 +2,37 @@ import Link from "next/link";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen w-full font-sans">
+    <div className="flex min-h-screen w-full font-sans bg-mocha-base">
       {/* Left Panel - Abstract Visuals */}
-      <div className="relative flex-1 hidden md:flex flex-col justify-center items-center bg-black text-white overflow-hidden p-8">
-        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_50%,#2a2a2a_0%,#0a0a0a_70%)] z-10" />
-        <div className="absolute inset-0 opacity-20 z-10 bg-[radial-gradient(#444_1px,transparent_1px),radial-gradient(#444_1px,transparent_1px)] bg-[size:50px_50px] bg-[position:0_0,25px_25px]" />
+      <div className="relative flex-1 hidden md:flex flex-col justify-center items-center bg-mocha-crust text-mocha-text overflow-hidden p-8">
+        <div className="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_50%_50%,var(--color-mocha-surface0)_0%,var(--color-mocha-crust)_70%)] z-10" />
+        <div className="absolute inset-0 opacity-20 z-10 bg-[radial-gradient(var(--color-mocha-surface1)_1px,transparent_1px),radial-gradient(var(--color-mocha-surface1)_1px,transparent_1px)] bg-[size:50px_50px] bg-[position:0_0,25px_25px]" />
         
         <div className="relative z-20 text-center max-w-[80%]">
-          <h1 className="text-4xl font-semibold leading-tight mb-4 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-semibold leading-tight mb-4 text-mocha-text">
             Design your database at the speed of thought.
           </h1>
-          <p className="text-lg text-gray-400">
+          <p className="text-lg text-mocha-subtext0">
             Visualize, iterate, and build with Skyforge.
           </p>
         </div>
       </div>
 
       {/* Right Panel - Login Card */}
-      <div className="flex-1 flex flex-col justify-center items-center bg-background text-foreground p-8 dark:bg-neutral-950">
-        <div className="w-full max-w-[400px] p-12 rounded-xl border border-black/10 shadow-sm flex flex-col items-center bg-white dark:bg-neutral-900 dark:border-neutral-800 dark:shadow-md">
-          <div className="text-2xl font-bold mb-8 tracking-tighter">Skyforge</div>
-          <h2 className="text-2xl font-semibold mb-8 text-center">Welcome to Skyforge</h2>
+      <div className="flex-1 flex flex-col justify-center items-center bg-mocha-base text-mocha-text p-8">
+        <div className="w-full max-w-[400px] p-12 rounded-2xl border border-mocha-surface0 shadow-lg flex flex-col items-center bg-mocha-mantle backdrop-blur-sm">
+          <div className="text-2xl font-bold mb-8 tracking-tighter text-mocha-text">Skyforge</div>
+          <h2 className="text-2xl font-semibold mb-8 text-center text-mocha-text">Welcome to Skyforge</h2>
 
           <a 
             href="http://localhost:8080/auth/google/login" 
-            className="flex items-center justify-center w-full p-3 gap-3 border border-gray-200 rounded-lg bg-white text-gray-800 text-base font-medium transition-all hover:bg-gray-50 hover:border-gray-300 hover:-translate-y-px active:translate-y-0"
+            className="flex items-center justify-center w-full p-3 gap-3 border border-mocha-surface0 rounded-xl bg-mocha-surface0 text-mocha-text text-base font-medium transition-all hover:bg-mocha-surface1 hover:border-mocha-mauve/50 hover:-translate-y-px active:translate-y-0 shadow-sm"
           >
             <GoogleIcon />
             Continue with Google
           </a>
 
-          <p className="mt-8 text-xs text-gray-500 text-center">
+          <p className="mt-8 text-xs text-mocha-overlay0 text-center">
             By continuing, you agree to our Terms of Service.
           </p>
         </div>

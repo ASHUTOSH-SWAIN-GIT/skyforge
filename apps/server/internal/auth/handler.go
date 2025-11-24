@@ -141,6 +141,23 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	// Clear the auth_token cookie by setting it to expire in the past
+	http.SetCookie(w, &http.Cookie{
+		Name:     "auth_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		Secure:   false, // set true in prod
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Logged out successfully"})
+}
+
 func generateState() string {
 	b := make([]byte, 16)
 	rand.Read(b)

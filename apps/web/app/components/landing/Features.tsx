@@ -50,7 +50,8 @@ const features = [
 
 export function Features() {
   return (
-    <section id="features" className="py-24 bg-mocha-mantle relative overflow-hidden">
+    <section id="features" className="py-24 bg-mocha-base relative overflow-hidden">
+      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-mocha-surface0 to-transparent" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-20">
           <motion.h2
@@ -60,7 +61,7 @@ export function Features() {
             className="text-3xl md:text-4xl font-bold mb-6 text-mocha-text"
           >
             Everything you need to build <br />
-            <span className="text-mocha-blue">world-class databases</span>
+            <span className="text-mocha-mauve">world-class databases</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -81,7 +82,7 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="p-8 rounded-2xl bg-mocha-surface0/30 border border-mocha-surface1/50 hover:border-mocha-blue/50 transition-all hover:bg-mocha-surface0/50 group"
+              className="p-8 rounded-2xl bg-mocha-mantle border border-mocha-surface0 hover:border-mocha-mauve/50 transition-all hover:bg-mocha-mantle/80 group shadow-lg hover:shadow-mocha-mauve/5"
             >
               <div className={`w-12 h-12 rounded-lg ${feature.bg} ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
                 {feature.icon}

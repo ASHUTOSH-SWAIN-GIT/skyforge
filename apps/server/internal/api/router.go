@@ -13,6 +13,7 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler) *http.
 	mux.HandleFunc("/auth/google/login", authHandler.GoogleLogin)
 	mux.HandleFunc("/auth/google/callback", authHandler.GoogleCallback)
 	mux.HandleFunc("/auth/me", authHandler.GetMe)
+	mux.HandleFunc("POST /auth/logout", authHandler.Logout)
 
 	// Project Routes
 	mux.HandleFunc("/projects", func(w http.ResponseWriter, r *http.Request) {

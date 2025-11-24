@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "../../hooks/useUser";
 import { 
   LayoutGrid, 
@@ -19,6 +19,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useUser();
   const [showLogout, setShowLogout] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -160,9 +161,28 @@ export default function DashboardLayout({
           {/* Logout Button - Conditional */}
           {showLogout && (
             <button 
-              onClick={() => {
-                document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                window.location.href = "/login";
+              onClick={async () => {
+                try {
+                  // Call backend logout endpoint to clear HttpOnly cookie
+                  await fetch("/api/auth/logout", {
+                    method: "POST",
+                    credentials: "include",
+                  });
+                  
+                  // Clear any cached data
+                  if (typeof window !== 'undefined') {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                  }
+                  
+                  // Force a hard redirect to landing page to clear all state
+                  window.location.href = "/";
+                } catch (error) {
+                  console.error("Logout error:", error);
+                  // Fallback: try to clear cookie manually and redirect
+                  document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                  window.location.href = "/";
+                }
               }}
               className="flex items-center gap-3 w-full px-3 py-2 mt-2 text-sm text-mocha-subtext0 hover:text-mocha-red hover:bg-mocha-red/10 rounded-md transition-colors"
             >

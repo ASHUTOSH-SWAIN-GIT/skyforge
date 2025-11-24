@@ -1,11 +1,8 @@
 import Link from 'next/link';
-import { Button } from '@repo/ui/src/button'; // Assuming shared UI exists, otherwise I'll use standard HTML/Tailwind
-// Actually I see @repo/ui in package.json, let's check its exports or just use standard tailwind for now to be safe and fast.
-// The user said "professional", so custom styling is good.
 
 export function Navbar() {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-mocha-surface0/20 bg-mocha-base/80">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-mocha-surface0 bg-mocha-base/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
@@ -28,7 +25,7 @@ export function Navbar() {
           </div>
           <div>
             <Link href="/login">
-              <button className="bg-mocha-blue text-mocha-base hover:bg-mocha-sapphire transition-colors px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-mocha-blue/20">
+              <button className="bg-mocha-mauve text-mocha-base hover:bg-mocha-mauve/90 transition-colors px-4 py-2 rounded-full text-sm font-bold shadow-lg shadow-mocha-mauve/20">
                 Get Started
               </button>
             </Link>
