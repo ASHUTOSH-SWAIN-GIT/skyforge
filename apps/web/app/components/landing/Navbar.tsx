@@ -37,7 +37,7 @@ export function Navbar() {
             <span className="text-xl font-bold text-mocha-text tracking-tight">
               Skyforge
             </span>
-          </Link>
+            </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
@@ -60,8 +60,8 @@ export function Navbar() {
               target="_blank"
               className="px-4 py-2 text-sm font-medium text-mocha-subtext0 hover:text-mocha-text transition-colors"
             >
-              GitHub
-            </Link>
+                GitHub
+              </Link>
           </div>
 
           {/* CTA Buttons */}

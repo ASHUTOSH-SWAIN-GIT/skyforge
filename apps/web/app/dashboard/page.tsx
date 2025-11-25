@@ -87,9 +87,9 @@ export default function WorkspacePage() {
       />
       
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
+      <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-mocha-mauve to-mocha-blue bg-clip-text text-transparent">Workspace</h1>
-          <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
+        <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
         </div>
       </div>
 
@@ -155,12 +155,12 @@ export default function WorkspacePage() {
                     <Database className="w-3.5 h-3.5" />
                     {getTableCount(project.data)} Tables
                   </span>
-                </div>
+            </div>
                 <div className="w-8 h-8 rounded-full bg-mocha-surface0 flex items-center justify-center text-mocha-text opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                   <ArrowRight className="w-4 h-4" />
-                </div>
-              </div>
-            </div>
+          </div>
+          </div>
+        </div>
           ))
         )}
       </div>

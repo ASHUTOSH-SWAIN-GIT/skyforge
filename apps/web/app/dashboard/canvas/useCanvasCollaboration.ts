@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Edge, Node } from "reactflow";
-import { WebrtcProvider } from "y-webrtc";
+import { WebsocketProvider } from "y-websocket";
 import * as Y from "yjs";
 import { useCanvasStore } from "./store";
 
@@ -25,11 +25,27 @@ interface UseCanvasCollaborationOptions {
   };
 }
 
-const SIGNALING_SERVERS = [
-  "wss://signaling.yjs.dev",
-  "wss://y-webrtc-signaling-eu.herokuapp.com",
-  "wss://y-webrtc-signaling-us.herokuapp.com",
-];
+// Get WebSocket URL from environment or use default
+const getWebSocketUrl = (roomKey: string): string => {
+  if (typeof window !== "undefined") {
+    // Use environment variable if set, otherwise derive from current location
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL;
+    if (wsUrl) {
+      const baseUrl = wsUrl.replace(/\/$/, "");
+      return `${baseUrl}/ws/collaboration/${roomKey}`;
+    }
+    
+    // Derive WebSocket URL from current location
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.hostname;
+    // For development (localhost), always use port 8080 for backend
+    // In production, use the same host/port as frontend
+    const isDev = host === "localhost" || host === "127.0.0.1";
+    const wsPort = isDev ? ":8080" : (window.location.port ? `:${window.location.port}` : "");
+    return `${protocol}//${host}${wsPort}/ws/collaboration/${roomKey}`;
+  }
+  return `ws://localhost:8080/ws/collaboration/${roomKey}`;
+};
 
 export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
   const setNodes = useCanvasStore((state) => state.setNodes);
@@ -50,10 +66,30 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     setStatus("connecting");
 
     const doc = new Y.Doc();
-    const provider = new WebrtcProvider(`skyforge-${options.roomKey}`, doc, {
-      signaling: SIGNALING_SERVERS,
+    const wsUrl = getWebSocketUrl(options.roomKey);
+    console.log("[Collaboration] Connecting to WebSocket:", wsUrl);
+    
+    const provider = new WebsocketProvider(wsUrl, `skyforge-${options.roomKey}`, doc, {
+      connect: true,
     });
     const awareness = provider.awareness;
+
+    // Add error handler
+    provider.on("connection-error", (event: Event, provider: WebsocketProvider) => {
+      console.error("[Collaboration] Connection error:", event);
+      setStatus("idle");
+    });
+
+    // Check connection state periodically as fallback
+    const connectionCheck = setInterval(() => {
+      if (provider.shouldConnect && provider.wsconnected) {
+        setStatus("connected");
+        clearInterval(connectionCheck);
+      }
+    }, 1000);
+
+    // Clear interval on cleanup
+    const cleanupInterval = () => clearInterval(connectionCheck);
 
     if (userId && userName) {
       awareness.setLocalStateField("user", {
@@ -102,21 +138,89 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       syncEdgesFromDoc();
     }
 
-    const statusHandler = (event: { connected: boolean }) => {
-      setStatus(event.connected ? "connected" : "connecting");
+    const statusHandler = (event: { status: "connecting" | "connected" | "disconnected" }) => {
+      console.log("[Collaboration] Status changed:", event.status);
+      if (event.status === "connected") {
+        setStatus("connected");
+        clearInterval(connectionCheck);
+      } else if (event.status === "connecting") {
+        setStatus("connecting");
+      } else {
+        setStatus("idle");
+        clearInterval(connectionCheck);
+      }
     };
 
     provider.on("status", statusHandler);
 
     const updatePeers = () => {
-      const current = Array.from(awareness.getStates().values())
-        .map((state) => (state as { user?: CollaboratorPresence }).user)
-        .filter((presence): presence is CollaboratorPresence => Boolean(presence));
-      setPeers(current);
+      try {
+        // Get all awareness states (including local)
+        const states = awareness.getStates();
+        const allPeers: CollaboratorPresence[] = [];
+        
+        // Iterate through all client states
+        states.forEach((state, clientId) => {
+          const userData = (state as { user?: CollaboratorPresence }).user;
+          if (userData && userData.id && userData.name) {
+            allPeers.push(userData);
+          }
+        });
+        
+        // Ensure local user is included if they have user data
+        if (userId && userName) {
+          const localUserExists = allPeers.some(p => p.id === userId);
+          if (!localUserExists) {
+            allPeers.push({
+              id: userId,
+              name: userName,
+              color: getColorForUser(userId),
+              avatarUrl: userAvatarUrl ?? null,
+            });
+          }
+        }
+        
+        // Deduplicate by user ID to prevent duplicate keys
+        const uniquePeersMap = new Map<string, CollaboratorPresence>();
+        for (const peer of allPeers) {
+          if (!uniquePeersMap.has(peer.id)) {
+            uniquePeersMap.set(peer.id, peer);
+          }
+        }
+        
+        const uniquePeers = Array.from(uniquePeersMap.values());
+        
+        console.log("[Collaboration] Peers updated:", uniquePeers.length, uniquePeers.map(p => p.name));
+        
+        setPeers(uniquePeers);
+      } catch (error) {
+        console.error("Error updating peers:", error);
+      }
     };
 
-    awareness.on("change", updatePeers);
-    updatePeers();
+    // Listen to multiple events to catch all peer changes
+    const awarenessChangeHandler = () => {
+      updatePeers();
+    };
+    const awarenessUpdateHandler = () => {
+      updatePeers();
+    };
+    
+    awareness.on("change", awarenessChangeHandler);
+    awareness.on("update", awarenessUpdateHandler);
+    
+    // Also listen to sync events for peer connections
+    const syncHandler = () => {
+      // Small delay to ensure awareness state is synced
+      setTimeout(updatePeers, 200);
+    };
+    provider.on("sync", syncHandler);
+    
+    // Initial update with delay to allow awareness to sync
+    setTimeout(updatePeers, 500);
+    
+    // Periodic check as fallback (every 2 seconds)
+    const peerCheckInterval = setInterval(updatePeers, 2000);
 
     const unsubscribeStore = useCanvasStore.subscribe((state, previousState) => {
       if (state.nodes !== previousState?.nodes && !applyingNodes.current) {
@@ -134,10 +238,14 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     });
 
     return () => {
+      cleanupInterval();
+      clearInterval(peerCheckInterval);
       unsubscribeStore();
       nodesArray.unobserveDeep(syncNodesFromDoc);
       edgesArray.unobserveDeep(syncEdgesFromDoc);
-      awareness.off("change", updatePeers);
+      awareness.off("change", awarenessChangeHandler);
+      awareness.off("update", awarenessUpdateHandler);
+      provider.off("sync", syncHandler);
       provider.off("status", statusHandler);
       provider.destroy();
       doc.destroy();
@@ -156,7 +264,7 @@ function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
 }
 
-function getColorForUser(id: string) {
+function getColorForUser(id: string): string {
   const palette = [
     "#cba6f7",
     "#89b4fa",
@@ -167,6 +275,7 @@ function getColorForUser(id: string) {
     "#fab387",
   ];
   const hash = [...id].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return palette[Math.abs(hash) % palette.length];
+  const index = Math.abs(hash) % palette.length;
+  return palette[index] || "#cba6f7"; // Fallback color
 }
 

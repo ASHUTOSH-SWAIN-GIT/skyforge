@@ -37,8 +37,9 @@ func main() {
 	queries := database.New(conn)
 	authHandler := auth.NewHandler(queries)
 	projectHandler := api.NewProjectHandler(queries)
+	collabHub := api.NewCollaborationHub()
 
-	mux := api.NewRouter(authHandler, projectHandler)
+	mux := api.NewRouter(authHandler, projectHandler, collabHub)
 
 	port := os.Getenv("PORT")
 	if port == "" {

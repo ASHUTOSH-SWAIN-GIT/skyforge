@@ -12,22 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type DatabaseConnection struct {
-	ID           uuid.UUID     `json:"id"`
-	UserID       uuid.UUID     `json:"user_id"`
-	Name         string        `json:"name"`
-	Host         string        `json:"host"`
-	Port         int32         `json:"port"`
-	DatabaseName string        `json:"database_name"`
-	Username     string        `json:"username"`
-	Password     string        `json:"password"`
-	DbType       string        `json:"db_type"`
-	SslMode      string        `json:"ssl_mode"`
-	CreatedAt    time.Time     `json:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at"`
-	ProjectID    uuid.NullUUID `json:"project_id"`
-}
-
 type Project struct {
 	ID          uuid.UUID       `json:"id"`
 	UserID      uuid.UUID       `json:"user_id"`
@@ -68,4 +52,20 @@ type User struct {
 	Provider  string         `json:"provider"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
+}
+
+type DatabaseConnection struct {
+	ID           uuid.UUID     `json:"id"`
+	UserID       uuid.UUID     `json:"user_id"`
+	Name         string        `json:"name"`
+	Host         string        `json:"host"`
+	Port         int32         `json:"port"`
+	DatabaseName string        `json:"database_name"`
+	Username     string        `json:"username"`
+	Password     string        `json:"password"`
+	DbType       string        `json:"db_type"`
+	SslMode      string        `json:"ssl_mode"`
+	CreatedAt    time.Time     `json:"created_at"`
+	UpdatedAt    time.Time     `json:"updated_at"`
+	ProjectID    uuid.NullUUID `json:"project_id"`
 }

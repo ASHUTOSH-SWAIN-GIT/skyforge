@@ -138,7 +138,7 @@ func GenerateSQL(jsonData []byte) (string, error) {
 					idxName,
 					cleanName(rel.ToTable),
 					cleanName(rel.ToColumn),
-				))
+			))
 				indexes[idxName] = struct{}{}
 			}
 		}

@@ -163,6 +163,21 @@ func (q *Queries) GetProjectsByUser(ctx context.Context, userID uuid.UUID) ([]Ge
 	return items, nil
 }
 
+const removeProjectCollaborator = `-- name: RemoveProjectCollaborator :exec
+DELETE FROM project_collaborators
+WHERE project_id = $1 AND user_id = $2
+`
+
+type RemoveProjectCollaboratorParams struct {
+	ProjectID uuid.UUID `json:"project_id"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) RemoveProjectCollaborator(ctx context.Context, arg RemoveProjectCollaboratorParams) error {
+	_, err := q.db.ExecContext(ctx, removeProjectCollaborator, arg.ProjectID, arg.UserID)
+	return err
+}
+
 const updateProject = `-- name: UpdateProject :one
 UPDATE projects 
 SET name = $2,

@@ -71,7 +71,7 @@ export function Hero() {
               <button className="group relative px-8 py-4 rounded-xl font-semibold text-mocha-crust overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-mocha-mauve/25">
                 <div className="absolute inset-0 bg-gradient-to-r from-mocha-mauve via-mocha-pink to-mocha-mauve bg-[length:200%_100%] animate-gradient-x" />
                 <span className="relative flex items-center gap-2">
-                  Start Building Free
+                Start Building Free
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </span>
               </button>
@@ -81,16 +81,16 @@ export function Hero() {
                 <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
               </div>
               Watch Demo
-            </button>
+              </button>
           </m.div>
 
           {/* Interactive Schema Preview */}
           <m.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
             className="relative max-w-5xl mx-auto"
-          >
+        >
             {/* Glow Effect */}
             <div className="absolute -inset-4 bg-gradient-to-r from-mocha-mauve/20 via-mocha-blue/20 to-mocha-mauve/20 rounded-3xl blur-2xl opacity-50" />
             
@@ -162,12 +162,12 @@ export function Hero() {
                     <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
                       <span className="text-mocha-blue">user_id</span>
                       <span className="text-mocha-overlay0">uuid</span>
-                    </div>
+                </div>
                     <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
                       <span className="text-mocha-text">name</span>
                       <span className="text-mocha-overlay0">text</span>
-                    </div>
-                  </div>
+                </div>
+              </div>
                 </m.div>
 
                 <m.div
@@ -188,8 +188,8 @@ export function Hero() {
                     <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
                       <span className="text-mocha-blue">user_id</span>
                       <span className="text-mocha-overlay0">uuid</span>
-                    </div>
-                  </div>
+                </div>
+                </div>
                 </m.div>
 
                 {/* Connection Lines */}
@@ -255,7 +255,7 @@ export function Hero() {
               ))}
             </div>
           </m.div>
-        </div>
+          </div>
       </div>
       </LazyMotion>
     </section>

@@ -193,7 +193,7 @@ export default function DashboardLayout({
                 } catch (error) {
                   console.error("Logout error:", error);
                   // Fallback: try to clear cookie manually and redirect
-                  document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                   window.location.href = "/";
                 }
               }}

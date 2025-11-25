@@ -6,7 +6,7 @@ import (
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/auth"
 )
 
-func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler) *http.ServeMux {
+func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler, hub *CollaborationHub) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Auth Routes
@@ -35,6 +35,9 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler) *http.
 	mux.HandleFunc("GET /projects/{id}/share-link", projectHandler.GetShareLink)
 	mux.HandleFunc("POST /projects/{id}/share-link", projectHandler.CreateShareLink)
 	mux.HandleFunc("POST /projects/share-links/{token}/join", projectHandler.JoinShareLink)
+
+	// WebSocket Routes for Collaboration
+	mux.HandleFunc("/ws/collaboration/", hub.HandleWebSocket)
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))

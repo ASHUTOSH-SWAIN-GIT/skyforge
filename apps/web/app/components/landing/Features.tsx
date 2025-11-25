@@ -84,7 +84,7 @@ export function Features() {
               {/* Icon */}
               <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} p-[1px] mb-6`}>
                 <div className="w-full h-full rounded-xl bg-mocha-mantle flex items-center justify-center text-mocha-text group-hover:bg-transparent group-hover:text-mocha-crust transition-colors duration-300">
-                  {feature.icon}
+                {feature.icon}
                 </div>
               </div>
 

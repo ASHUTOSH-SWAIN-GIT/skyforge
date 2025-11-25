@@ -22,7 +22,7 @@
     "swr": "^2.3.6",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.17",
-    "y-webrtc": "^10.3.0",
+    "y-websocket": "^2.0.4",
     "yjs": "^13.6.27",
     "zustand": "^5.0.2"
   },
