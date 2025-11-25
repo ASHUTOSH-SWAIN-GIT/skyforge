@@ -85,10 +85,27 @@ function CanvasInner() {
   } = useCanvasStore();
 
   const { user } = useUser();
+  
+  // Extract avatar URL from NullString structure
+  const userAvatarUrl = useMemo(() => {
+    if (!user?.avatar_url) return null;
+    const avatarUrlRaw = user.avatar_url;
+    if (typeof avatarUrlRaw === "string") {
+      return avatarUrlRaw;
+    }
+    if (typeof avatarUrlRaw === "object" && avatarUrlRaw !== null && "String" in avatarUrlRaw && "Valid" in avatarUrlRaw) {
+      const nullString = avatarUrlRaw as { String: string; Valid: boolean };
+      if (nullString.Valid && nullString.String) {
+        return nullString.String;
+      }
+    }
+    return null;
+  }, [user?.avatar_url]);
+  
   const { status: collaborationStatus, peers } = useCanvasCollaboration({
     roomKey: collabRoomKey,
     enabled: Boolean(collabRoomKey),
-    user: user ? { id: user.id, name: user.name } : undefined,
+    user: user ? { id: user.id, name: user.name, avatarUrl: userAvatarUrl } : undefined,
   });
   const isOwner = user && project ? project.user_id === user.id : false;
   const shareUrl = useMemo(() => {
@@ -458,16 +475,41 @@ function CanvasInner() {
         </div>
         {displayedPeers.length > 0 && (
           <div className="flex -space-x-2">
-            {displayedPeers.map((peer) => (
-              <div
-                key={peer.id}
-                className="h-8 w-8 rounded-full border border-mocha-crust/40 text-[11px] font-semibold text-mocha-crust flex items-center justify-center"
-                style={{ backgroundColor: peer.color }}
-                title={peer.name}
-              >
-                {peer.name?.charAt(0).toUpperCase()}
-              </div>
-            ))}
+            {displayedPeers.map((peer) => {
+              const hasAvatar = peer.avatarUrl && peer.avatarUrl.trim() !== "";
+              return (
+                <div
+                  key={peer.id}
+                  className="h-8 w-8 rounded-full border border-mocha-crust/40 overflow-hidden flex-shrink-0"
+                  title={peer.name}
+                >
+                  {hasAvatar ? (
+                    <img
+                      src={peer.avatarUrl!}
+                      alt={peer.name || "Collaborator"}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to colored circle if image fails to load
+                        e.currentTarget.style.display = "none";
+                        const parent = e.currentTarget.parentElement;
+                        if (parent) {
+                          parent.style.backgroundColor = peer.color;
+                          parent.className += " flex items-center justify-center text-[11px] font-semibold text-mocha-crust";
+                          parent.textContent = peer.name?.charAt(0).toUpperCase() || "?";
+                        }
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full flex items-center justify-center text-[11px] font-semibold text-mocha-crust"
+                      style={{ backgroundColor: peer.color }}
+                    >
+                      {peer.name?.charAt(0).toUpperCase() || "?"}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {extraPeers > 0 && (
               <div className="h-8 w-8 rounded-full bg-mocha-surface0/80 border border-mocha-surface1 text-[11px] text-mocha-text flex items-center justify-center">
                 +{extraPeers}

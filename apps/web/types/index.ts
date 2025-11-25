@@ -2,7 +2,7 @@ export interface User {
     id : string;
     email: string;
     name:string;
-    avatar_url?:string;
+    avatar_url?: string | { String: string; Valid: boolean } | null;
     provider:string;
     created_at:string
 }

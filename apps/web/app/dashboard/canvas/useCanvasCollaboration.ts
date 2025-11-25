@@ -12,6 +12,7 @@ export interface CollaboratorPresence {
   id: string;
   name: string;
   color: string;
+  avatarUrl?: string | null;
 }
 
 interface UseCanvasCollaborationOptions {
@@ -20,6 +21,7 @@ interface UseCanvasCollaborationOptions {
   user?: {
     id: string;
     name: string;
+    avatarUrl?: string | null;
   };
 }
 
@@ -36,6 +38,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
   const [peers, setPeers] = useState<CollaboratorPresence[]>([]);
   const userId = options.user?.id ?? null;
   const userName = options.user?.name ?? null;
+  const userAvatarUrl = options.user?.avatarUrl ?? null;
 
   useEffect(() => {
     if (!options.enabled || !options.roomKey) {
@@ -57,6 +60,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
         id: userId,
         name: userName,
         color: getColorForUser(userId),
+        avatarUrl: userAvatarUrl,
       });
     }
 
@@ -140,7 +144,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       setPeers([]);
       setStatus("idle");
     };
-  }, [options.enabled, options.roomKey, userId, userName, setNodes, setEdges]);
+  }, [options.enabled, options.roomKey, userId, userName, userAvatarUrl, setNodes, setEdges]);
 
   return { status, peers };
 }

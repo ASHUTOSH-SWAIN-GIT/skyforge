@@ -126,13 +126,26 @@ export default function DashboardLayout({
             className="flex items-center gap-3 w-full px-3 py-2 rounded-md hover:bg-mocha-surface0 transition-colors group"
           >
             {(() => {
-              const avatarUrl = user?.avatar_url;
-              const hasAvatar = avatarUrl && typeof avatarUrl === "string" && avatarUrl.trim() !== "";
+              const avatarUrlRaw = user?.avatar_url;
+              let avatarUrl: string | null = null;
+              
+              if (avatarUrlRaw) {
+                if (typeof avatarUrlRaw === "string") {
+                  avatarUrl = avatarUrlRaw;
+                } else if (typeof avatarUrlRaw === "object" && avatarUrlRaw !== null && "String" in avatarUrlRaw && "Valid" in avatarUrlRaw) {
+                  const nullString = avatarUrlRaw as { String: string; Valid: boolean };
+                  if (nullString.Valid && nullString.String) {
+                    avatarUrl = nullString.String;
+                  }
+                }
+              }
+              
+              const hasAvatar = avatarUrl && avatarUrl.trim() !== "";
               
               if (hasAvatar) {
                 return (
                   <img
-                    src={avatarUrl}
+                    src={avatarUrl!}
                     alt={user?.name || "User"}
                     className="h-8 w-8 rounded-full border border-mocha-surface1 object-cover flex-shrink-0"
                     onError={(e) => {
