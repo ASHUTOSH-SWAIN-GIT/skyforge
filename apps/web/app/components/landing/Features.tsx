@@ -1,80 +1,98 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Code2, Users, Workflow, Shield, Zap, Globe } from 'lucide-react';
+import { Code2, Users, Workflow, Shield, Zap, Globe, Sparkles, Database } from 'lucide-react';
 
 const features = [
   {
     icon: <Workflow className="w-6 h-6" />,
     title: 'Visual Schema Builder',
-    description: 'Drag, drop, and connect tables. Design complex relationships intuitively without writing a single line of SQL.',
-    color: 'text-mocha-blue',
-    bg: 'bg-mocha-blue/10',
+    description: 'Design complex database schemas with an intuitive drag-and-drop interface. No SQL knowledge required.',
+    gradient: 'from-mocha-blue to-mocha-sapphire',
   },
   {
     icon: <Code2 className="w-6 h-6" />,
-    title: 'Instant Code Gen',
-    description: 'Export your schema to SQL, Prisma, Go structs, or TypeScript interfaces instantly. Always sync, never stale.',
-    color: 'text-mocha-mauve',
-    bg: 'bg-mocha-mauve/10',
+    title: 'Instant Code Generation',
+    description: 'Export your schema to production-ready SQL, Prisma, TypeORM, or any other format with one click.',
+    gradient: 'from-mocha-mauve to-mocha-pink',
   },
   {
     icon: <Users className="w-6 h-6" />,
     title: 'Real-time Collaboration',
-    description: 'Work with your team in real-time. See cursors, comments, and changes as they happen. Multiplayer by default.',
-    color: 'text-mocha-green',
-    bg: 'bg-mocha-green/10',
+    description: 'Work together with your team in real-time. See changes, cursors, and comments as they happen.',
+    gradient: 'from-mocha-green to-mocha-teal',
   },
   {
-    icon: <Shield className="w-6 h-6" />,
-    title: 'Type Safe',
-    description: 'Built-in validation ensures your schema is correct. Catch errors before they hit production.',
-    color: 'text-mocha-peach',
-    bg: 'bg-mocha-peach/10',
+    icon: <Sparkles className="w-6 h-6" />,
+    title: 'AI-Powered Assistant',
+    description: 'Let AI help you design schemas, suggest optimizations, and generate SQL from natural language.',
+    gradient: 'from-mocha-pink to-mocha-red',
   },
   {
     icon: <Zap className="w-6 h-6" />,
-    title: 'Lightning Fast',
-    description: 'Built on modern tech stack for blazing fast performance, even with massive schemas.',
-    color: 'text-mocha-yellow',
-    bg: 'bg-mocha-yellow/10',
+    title: 'Lightning Performance',
+    description: 'Built on cutting-edge technology for instant responsiveness, even with thousands of tables.',
+    gradient: 'from-mocha-yellow to-mocha-peach',
   },
   {
-    icon: <Globe className="w-6 h-6" />,
-    title: 'Cloud Native',
-    description: 'Access your schemas from anywhere. Version control integration and cloud backups included.',
-    color: 'text-mocha-sapphire',
-    bg: 'bg-mocha-sapphire/10',
+    icon: <Shield className="w-6 h-6" />,
+    title: 'Enterprise Security',
+    description: 'SOC 2 compliant with end-to-end encryption. Your data never leaves your control.',
+    gradient: 'from-mocha-lavender to-mocha-blue',
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="py-24 bg-mocha-base relative overflow-hidden">
-      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-mocha-surface0 to-transparent" />
+    <section id="features" className="py-32 bg-mocha-base relative overflow-hidden">
+      {/* Background Elements */}
+      <div className="absolute inset-0">
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-mocha-surface1 to-transparent" />
+        <div className="absolute top-1/4 left-0 w-[500px] h-[500px] bg-mocha-mauve/5 rounded-full blur-[128px]" />
+        <div className="absolute bottom-1/4 right-0 w-[500px] h-[500px] bg-mocha-blue/5 rounded-full blur-[128px]" />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-mocha-surface0/50 border border-mocha-surface1 mb-6"
+          >
+            <Database className="w-4 h-4 text-mocha-mauve" />
+            <span className="text-sm font-medium text-mocha-subtext1">Powerful Features</span>
+          </motion.div>
+          
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold mb-6 text-mocha-text"
+            transition={{ delay: 0.1 }}
+            className="text-4xl sm:text-5xl font-bold mb-6 text-mocha-text"
           >
-            Everything you need to build <br />
-            <span className="text-mocha-mauve">world-class databases</span>
+            Everything you need to
+            <br />
+            <span className="bg-gradient-to-r from-mocha-mauve to-mocha-blue bg-clip-text text-transparent">
+              build better databases
+            </span>
           </motion.h2>
+          
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-mocha-subtext0 text-lg"
+            transition={{ delay: 0.2 }}
+            className="text-lg text-mocha-subtext0"
           >
-            From solo developers to enterprise teams, Skyforge provides the tools to design, document, and deploy better database schemas.
+            From solo developers to enterprise teams, Skyforge provides the complete 
+            toolkit for designing, documenting, and deploying database schemas.
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
             <motion.div
               key={index}
@@ -82,13 +100,33 @@ export function Features() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="p-8 rounded-2xl bg-mocha-mantle border border-mocha-surface0 hover:border-mocha-mauve/50 transition-all hover:bg-mocha-mantle/80 group shadow-lg hover:shadow-mocha-mauve/5"
+              className="group relative p-8 rounded-2xl bg-mocha-mantle/50 border border-mocha-surface0 hover:border-mocha-surface1 transition-all duration-500 hover:shadow-xl hover:shadow-mocha-crust/20"
             >
-              <div className={`w-12 h-12 rounded-lg ${feature.bg} ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
-                {feature.icon}
+              {/* Hover Gradient */}
+              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+              
+              {/* Icon */}
+              <div className={`relative w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} p-[1px] mb-6`}>
+                <div className="w-full h-full rounded-xl bg-mocha-mantle flex items-center justify-center text-mocha-text group-hover:bg-transparent group-hover:text-mocha-crust transition-colors duration-300">
+                  {feature.icon}
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-mocha-text mb-3">{feature.title}</h3>
-              <p className="text-mocha-subtext0 leading-relaxed">{feature.description}</p>
+
+              {/* Content */}
+              <h3 className="text-xl font-bold text-mocha-text mb-3 group-hover:text-mocha-mauve transition-colors">
+                {feature.title}
+              </h3>
+              <p className="text-mocha-subtext0 leading-relaxed">
+                {feature.description}
+              </p>
+
+              {/* Arrow */}
+              <div className="mt-6 flex items-center gap-2 text-sm font-medium text-mocha-overlay0 group-hover:text-mocha-mauve transition-colors">
+                Learn more
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -96,4 +134,3 @@ export function Features() {
     </section>
   );
 }
-

@@ -1,43 +1,107 @@
-
 import Link from 'next/link';
-import { Github, Twitter, Linkedin } from 'lucide-react';
+import { Github, Twitter, Linkedin, Mail } from 'lucide-react';
+
+const footerLinks = {
+  Product: [
+    { label: 'Features', href: '#features' },
+    { label: 'Pricing', href: '#pricing' },
+    { label: 'Changelog', href: '#' },
+    { label: 'Roadmap', href: '#' },
+  ],
+  Resources: [
+    { label: 'Documentation', href: '#' },
+    { label: 'API Reference', href: '#' },
+    { label: 'Blog', href: '#' },
+    { label: 'Community', href: '#' },
+  ],
+  Company: [
+    { label: 'About', href: '#' },
+    { label: 'Careers', href: '#' },
+    { label: 'Contact', href: '#' },
+    { label: 'Press Kit', href: '#' },
+  ],
+  Legal: [
+    { label: 'Privacy Policy', href: '#' },
+    { label: 'Terms of Service', href: '#' },
+    { label: 'Cookie Policy', href: '#' },
+  ],
+};
+
+const socialLinks = [
+  { icon: <Github className="w-5 h-5" />, href: 'https://github.com/lowkeydev/skyforge', label: 'GitHub' },
+  { icon: <Twitter className="w-5 h-5" />, href: '#', label: 'Twitter' },
+  { icon: <Linkedin className="w-5 h-5" />, href: '#', label: 'LinkedIn' },
+  { icon: <Mail className="w-5 h-5" />, href: '#', label: 'Email' },
+];
 
 export function Footer() {
   return (
-    <footer className="bg-mocha-mantle border-t border-mocha-surface0 py-12">
+    <footer className="bg-mocha-crust border-t border-mocha-surface0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-8">
-          <div className="flex flex-col items-center md:items-start gap-4">
-            <Link href="/" className="text-2xl font-bold text-mocha-text tracking-tight">
-              Skyforge
+        {/* Main Footer */}
+        <div className="py-16 grid grid-cols-2 md:grid-cols-6 gap-8">
+          {/* Brand */}
+          <div className="col-span-2">
+            <Link href="/" className="flex items-center gap-3 mb-6">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-mocha-mauve to-mocha-blue flex items-center justify-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-mocha-crust">
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <span className="text-xl font-bold text-mocha-text">Skyforge</span>
             </Link>
-            <p className="text-mocha-subtext0 text-sm max-w-xs text-center md:text-left">
-              The professional database design tool for modern development teams.
+            <p className="text-mocha-subtext0 text-sm max-w-xs mb-6 leading-relaxed">
+              The modern database design tool for teams who ship fast. 
+              Visual schema design, real-time collaboration, and instant code generation.
             </p>
+            {/* Social Links */}
+            <div className="flex gap-3">
+              {socialLinks.map((social, index) => (
+                <Link
+                  key={index}
+                  href={social.href}
+                  aria-label={social.label}
+                  className="w-10 h-10 rounded-lg bg-mocha-surface0/50 hover:bg-mocha-surface0 flex items-center justify-center text-mocha-overlay0 hover:text-mocha-text transition-colors"
+                >
+                  {social.icon}
+                </Link>
+              ))}
+            </div>
           </div>
-          
-          <div className="flex gap-6">
-            <Link href="#" className="text-mocha-subtext0 hover:text-mocha-blue transition-colors">
-              <Github className="w-5 h-5" />
-            </Link>
-            <Link href="#" className="text-mocha-subtext0 hover:text-mocha-blue transition-colors">
-              <Twitter className="w-5 h-5" />
-            </Link>
-            <Link href="#" className="text-mocha-subtext0 hover:text-mocha-blue transition-colors">
-              <Linkedin className="w-5 h-5" />
-            </Link>
-          </div>
+
+          {/* Links */}
+          {Object.entries(footerLinks).map(([category, links]) => (
+            <div key={category}>
+              <h4 className="text-sm font-semibold text-mocha-text mb-4">{category}</h4>
+              <ul className="space-y-3">
+                {links.map((link, index) => (
+                  <li key={index}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-mocha-overlay0 hover:text-mocha-text transition-colors"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
-        
-        <div className="mt-8 pt-8 border-t border-mocha-surface0 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-mocha-overlay0">
-          <p>&copy; {new Date().getFullYear()} Skyforge. All rights reserved.</p>
-          <div className="flex gap-6">
-            <Link href="#" className="hover:text-mocha-text transition-colors">Privacy Policy</Link>
-            <Link href="#" className="hover:text-mocha-text transition-colors">Terms of Service</Link>
+
+        {/* Bottom Footer */}
+        <div className="py-6 border-t border-mocha-surface0 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-mocha-overlay0">
+            &copy; {new Date().getFullYear()} Skyforge. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6 text-sm text-mocha-overlay0">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-mocha-green animate-pulse" />
+              All systems operational
+            </span>
           </div>
         </div>
       </div>
     </footer>
   );
 }
-
