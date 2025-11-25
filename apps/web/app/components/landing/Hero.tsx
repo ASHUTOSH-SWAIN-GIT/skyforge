@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Play, Database, Layers, Link as LinkIcon } from 'lucide-react';
 
@@ -17,10 +17,11 @@ export function Hero() {
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-mocha-blue/20 rounded-full blur-[128px] animate-pulse delay-1000" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-mocha-sapphire/10 rounded-full blur-[128px]" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
+      <LazyMotion features={domAnimation}>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
         <div className="text-center">
           {/* Badge */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
@@ -32,10 +33,10 @@ export function Hero() {
             </span>
             <span className="text-sm font-medium text-mocha-subtext1">Introducing Skyforge v1.0</span>
             <ArrowRight className="w-4 h-4 text-mocha-overlay0" />
-          </motion.div>
+          </m.div>
 
           {/* Main Headline */}
-          <motion.h1
+          <m.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
@@ -46,10 +47,10 @@ export function Hero() {
             <span className="bg-gradient-to-r from-mocha-mauve via-mocha-pink to-mocha-blue bg-clip-text text-transparent">
               visually, ship faster
             </span>
-          </motion.h1>
+          </m.h1>
 
           {/* Subheadline */}
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -57,10 +58,10 @@ export function Hero() {
           >
             The modern database design tool. Build schemas visually, 
             collaborate in real-time, and export production-ready SQL instantly.
-          </motion.p>
+          </m.p>
 
           {/* CTA Buttons */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -81,10 +82,10 @@ export function Hero() {
               </div>
               Watch Demo
             </button>
-          </motion.div>
+          </m.div>
 
           {/* Interactive Schema Preview */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
@@ -115,7 +116,7 @@ export function Hero() {
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#313244_1px,transparent_1px),linear-gradient(to_bottom,#313244_1px,transparent_1px)] bg-[size:2rem_2rem] opacity-30" />
 
                 {/* Table Nodes */}
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.8 }}
@@ -140,9 +141,9 @@ export function Hero() {
                       <span className="text-mocha-overlay0">text</span>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
 
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 1 }}
@@ -167,9 +168,9 @@ export function Hero() {
                       <span className="text-mocha-overlay0">text</span>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
 
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 1.2 }}
@@ -189,7 +190,7 @@ export function Hero() {
                       <span className="text-mocha-overlay0">uuid</span>
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
 
                 {/* Connection Lines */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none">
@@ -203,7 +204,7 @@ export function Hero() {
                       <stop offset="100%" stopColor="#a6e3a1" />
                     </linearGradient>
                   </defs>
-                  <motion.path
+                  <m.path
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{ duration: 1, delay: 1.4 }}
@@ -213,7 +214,7 @@ export function Hero() {
                     fill="none"
                     strokeLinecap="round"
                   />
-                  <motion.path
+                  <m.path
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{ duration: 1, delay: 1.6 }}
@@ -223,7 +224,7 @@ export function Hero() {
                     fill="none"
                     strokeLinecap="round"
                   />
-                  <motion.path
+                  <m.path
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={{ pathLength: 1, opacity: 1 }}
                     transition={{ duration: 1, delay: 1.8 }}
@@ -236,10 +237,10 @@ export function Hero() {
                 </svg>
               </div>
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Trust Badges */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.7 }}
@@ -253,9 +254,10 @@ export function Hero() {
                 </span>
               ))}
             </div>
-          </motion.div>
+          </m.div>
         </div>
       </div>
+      </LazyMotion>
     </section>
   );
 }

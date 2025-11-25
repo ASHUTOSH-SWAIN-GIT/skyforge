@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useCallback, useState, useRef, useMemo } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
-  Panel,
   useReactFlow,
   ReactFlowProvider,
   NodeChange,
@@ -16,11 +15,36 @@ import ReactFlow, {
   applyEdgeChanges,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { getProject, updateProject, exportProjectSQL, exportProjectSQLAI, importSQL } from "../../../../lib/projects";
-import { Project } from "../../../../types";
-import { Plus, Wand2, ZoomIn, ZoomOut, Maximize2, Code, ChevronLeft, ChevronRight, Save, Upload } from "lucide-react";
+import {
+  getProject,
+  updateProject,
+  exportProjectSQL,
+  exportProjectSQLAI,
+  importSQL,
+  getProjectShareLink,
+  createProjectShareLink,
+  joinShareLink,
+} from "../../../../lib/projects";
+import { Project, ShareLinkInfo } from "../../../../types";
+import {
+  Plus,
+  Wand2,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Code,
+  ChevronLeft,
+  ChevronRight,
+  Save,
+  Upload,
+  Share2,
+  Copy,
+  Check,
+} from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
+import { useCanvasCollaboration, CollaborationStatus } from "../useCanvasCollaboration";
+import { useUser } from "../../../../hooks/useUser";
 
 const nodeTypes = {
   tableNode: TableNode,
@@ -29,6 +53,7 @@ const nodeTypes = {
 function CanvasInner() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params.projectId as string;
   const [project, setProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -39,6 +64,15 @@ function CanvasInner() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const shareTokenParam = searchParams.get("shareToken");
+  const [canLoadProject, setCanLoadProject] = useState(() => !shareTokenParam);
+  const [shareInfo, setShareInfo] = useState<ShareLinkInfo | null>(null);
+  const [collabRoomKey, setCollabRoomKey] = useState<string | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareActionLoading, setShareActionLoading] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const {
     nodes,
@@ -50,12 +84,27 @@ function CanvasInner() {
     exportToData,
   } = useCanvasStore();
 
-  const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
+  const { user } = useUser();
+  const { status: collaborationStatus, peers } = useCanvasCollaboration({
+    roomKey: collabRoomKey,
+    enabled: Boolean(collabRoomKey),
+    user: user ? { id: user.id, name: user.name } : undefined,
+  });
+  const isOwner = user && project ? project.user_id === user.id : false;
+  const shareUrl = useMemo(() => {
+    if (!shareInfo) return "";
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    return `${origin}/dashboard/canvas/${shareInfo.projectId}?shareToken=${shareInfo.token}`;
+  }, [shareInfo]);
+  const statusColorMap: Record<CollaborationStatus, string> = {
+    connected: "bg-mocha-green",
+    connecting: "bg-mocha-yellow",
+    idle: "bg-mocha-surface1",
+  };
+  const displayedPeers = peers.slice(0, 3);
+  const extraPeers = peers.length - displayedPeers.length;
 
-  // Debug: Log when nodes change
-  useEffect(() => {
-    console.log("Nodes updated:", nodes.length, nodes);
-  }, [nodes]);
+  const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -96,10 +145,96 @@ function CanvasInner() {
       }
     };
 
-    if (projectId) {
-      fetchProject();
+    if (!projectId || !canLoadProject) {
+      return;
     }
-  }, [projectId, router, loadFromData, setNodes, setEdges]);
+
+    fetchProject();
+  }, [projectId, router, loadFromData, setNodes, setEdges, canLoadProject]);
+
+  useEffect(() => {
+    if (!shareTokenParam) {
+      setJoinError(null);
+      setCanLoadProject(true);
+      return;
+    }
+
+    let cancelled = false;
+    setJoinError(null);
+
+    const join = async () => {
+      try {
+        const response = await joinShareLink(shareTokenParam);
+        if (cancelled) {
+          return;
+        }
+
+        setShareInfo({
+          projectId: response.projectId,
+          token: response.token,
+          roomKey: response.roomKey,
+          createdAt: new Date().toISOString(),
+          createdBy: response.ownerId,
+          expiresAt: response.expiresAt ?? null,
+        });
+        setCollabRoomKey(response.roomKey);
+        setCanLoadProject(true);
+
+        const destinationProjectId = response.projectId || projectId;
+        router.replace(`/dashboard/canvas/${destinationProjectId}`);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to join share link", err);
+          setJoinError("Share link is invalid or has expired.");
+          router.push("/dashboard");
+        }
+      }
+    };
+
+    join();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shareTokenParam, router, projectId]);
+
+  useEffect(() => {
+    if (!projectId || !canLoadProject) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchShareLinkInfo = async () => {
+      try {
+        const response = await getProjectShareLink(projectId);
+        if (cancelled) {
+          return;
+        }
+        setShareInfo(response);
+        setCollabRoomKey(response.roomKey);
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+        const status = (err as { status?: number })?.status;
+        if (status === 404) {
+          setShareInfo(null);
+          if (!shareTokenParam) {
+            setCollabRoomKey(null);
+          }
+        } else {
+          console.error("Failed to get share link", err);
+        }
+      }
+    };
+
+    fetchShareLinkInfo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, canLoadProject, shareTokenParam]);
 
   const handleSave = useCallback(async () => {
     if (!project) return;
@@ -239,10 +374,52 @@ function CanvasInner() {
     }
   }, [project]);
 
+  const handleGenerateShareLink = useCallback(async () => {
+    if (!project || !isOwner) return;
+    setShareError(null);
+    setShareActionLoading(true);
+    try {
+      const response = await createProjectShareLink(project.id);
+      setShareInfo(response);
+      setCollabRoomKey(response.roomKey);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create share link.";
+      setShareError(message);
+    } finally {
+      setShareActionLoading(false);
+    }
+  }, [isOwner, project]);
+
+  const handleCopyShareLink = useCallback(async () => {
+    if (!shareInfo || !shareUrl) return;
+    try {
+      if (typeof navigator === "undefined" || !navigator.clipboard) {
+        throw new Error("Clipboard not available");
+      }
+      await navigator.clipboard.writeText(shareUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy share link", error);
+      setShareError("Unable to copy link automatically. Please copy it manually.");
+    }
+  }, [shareInfo, shareUrl]);
+
+  const handleOpenShareModal = useCallback(() => {
+    setShareError(null);
+    setCopySuccess(false);
+    setIsShareModalOpen(true);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="h-screen w-screen bg-mocha-base flex items-center justify-center">
-        <div className="text-mocha-subtext0">Loading project...</div>
+        <div className="text-center space-y-2">
+          <div className="text-mocha-subtext0">
+            {shareTokenParam ? "Preparing shared canvas..." : "Loading project..."}
+          </div>
+          {joinError && <p className="text-sm text-mocha-red">{joinError}</p>}
+        </div>
       </div>
     );
   }
@@ -265,6 +442,49 @@ function CanvasInner() {
 
   return (
     <div className="h-screen w-screen bg-mocha-base relative flex overflow-hidden">
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-3">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-sm">
+          <span className={`h-2 w-2 rounded-full ${statusColorMap[collaborationStatus]}`} />
+          <span className="text-xs font-semibold text-mocha-text capitalize">
+            {collaborationStatus === "connected"
+              ? "Live"
+              : collaborationStatus === "connecting"
+              ? "Connecting"
+              : "Offline"}
+          </span>
+          {peers.length > 0 && (
+            <span className="text-[10px] text-mocha-overlay0">{peers.length} online</span>
+          )}
+        </div>
+        {displayedPeers.length > 0 && (
+          <div className="flex -space-x-2">
+            {displayedPeers.map((peer) => (
+              <div
+                key={peer.id}
+                className="h-8 w-8 rounded-full border border-mocha-crust/40 text-[11px] font-semibold text-mocha-crust flex items-center justify-center"
+                style={{ backgroundColor: peer.color }}
+                title={peer.name}
+              >
+                {peer.name?.charAt(0).toUpperCase()}
+              </div>
+            ))}
+            {extraPeers > 0 && (
+              <div className="h-8 w-8 rounded-full bg-mocha-surface0/80 border border-mocha-surface1 text-[11px] text-mocha-text flex items-center justify-center">
+                +{extraPeers}
+              </div>
+            )}
+          </div>
+        )}
+        <button
+          onClick={handleOpenShareModal}
+          disabled={!project}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-mocha-text rounded-full border border-mocha-surface0 bg-mocha-mantle/70 hover:bg-mocha-surface0 transition-colors disabled:opacity-50"
+        >
+          <Share2 className="w-4 h-4" />
+          Share
+        </button>
+      </div>
+
       {/* Collapsible Sidebar */}
       <div
         className={`h-full bg-mocha-mantle/50 backdrop-blur-sm border-r border-mocha-surface0 transition-all duration-300 ease-in-out flex-shrink-0 ${
@@ -520,6 +740,87 @@ function CanvasInner() {
             </div>
             <div className="p-6 max-h-[70vh] overflow-auto font-mono text-sm text-mocha-subtext1 whitespace-pre-wrap bg-mocha-base/60">
               {sqlPreview}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-lg bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-mocha-overlay0">Live collaboration</p>
+                <p className="text-mocha-text font-semibold">Share this canvas</p>
+              </div>
+              <button
+                onClick={() => setIsShareModalOpen(false)}
+                className="px-3 py-1.5 text-xs rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              {shareInfo ? (
+                <>
+                  <p className="text-sm text-mocha-subtext0">
+                    Anyone with this link can open the canvas in real-time with you.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={shareUrl}
+                      readOnly
+                      className="flex-1 rounded-xl bg-mocha-base/60 border border-mocha-surface0 px-4 py-3 text-sm text-mocha-text font-mono"
+                    />
+                    <button
+                      onClick={handleCopyShareLink}
+                      className="px-4 py-3 rounded-xl border border-mocha-surface0 bg-mocha-surface0/50 hover:bg-mocha-surface0 transition-colors"
+                    >
+                      {copySuccess ? <Check className="w-4 h-4 text-mocha-green" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 text-xs text-mocha-overlay0">
+                    <span className="font-semibold text-mocha-text">
+                      Room ID: <span className="font-mono">{shareInfo.roomKey.slice(-8)}</span>
+                    </span>
+                    {shareInfo.expiresAt && (
+                      <span>
+                        Expires {new Date(shareInfo.expiresAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                      </span>
+                    )}
+                  </div>
+                  {isOwner && (
+                    <button
+                      onClick={handleGenerateShareLink}
+                      disabled={shareActionLoading}
+                      className="w-full px-4 py-3 rounded-xl text-sm font-semibold text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 transition-colors disabled:opacity-50"
+                    >
+                      {shareActionLoading ? "Refreshing link..." : "Regenerate link"}
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-mocha-subtext0">
+                    Live collaboration isn&apos;t enabled yet for this project.
+                  </p>
+                  {isOwner ? (
+                    <button
+                      onClick={handleGenerateShareLink}
+                      disabled={shareActionLoading}
+                      className="w-full px-4 py-3 rounded-xl text-sm font-semibold text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 transition-colors disabled:opacity-50"
+                    >
+                      {shareActionLoading ? "Enabling..." : "Enable live collaboration"}
+                    </button>
+                  ) : (
+                    <p className="text-xs text-mocha-overlay0">
+                      Only the project owner can enable live collaboration. Ask them to generate a share link.
+                    </p>
+                  )}
+                </div>
+              )}
+              {shareError && <p className="text-xs text-mocha-red">{shareError}</p>}
             </div>
           </div>
         </div>

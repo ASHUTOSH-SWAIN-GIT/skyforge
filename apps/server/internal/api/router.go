@@ -32,6 +32,9 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler) *http.
 	mux.HandleFunc("GET /projects/{id}/export", projectHandler.ExportProjectSQL)
 	mux.HandleFunc("GET /projects/{id}/export/ai", projectHandler.ExportProjectSQL_AI)
 	mux.HandleFunc("POST /projects/{id}/import-sql", projectHandler.ImportSQL)
+	mux.HandleFunc("GET /projects/{id}/share-link", projectHandler.GetShareLink)
+	mux.HandleFunc("POST /projects/{id}/share-link", projectHandler.CreateShareLink)
+	mux.HandleFunc("POST /projects/share-links/{token}/join", projectHandler.JoinShareLink)
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))

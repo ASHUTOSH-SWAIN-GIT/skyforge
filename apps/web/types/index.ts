@@ -18,3 +18,21 @@ export interface Project {
     created_at: string;
     updated_at: string;
 }
+
+export interface ShareLinkInfo {
+    projectId: string;
+    token: string;
+    roomKey: string;
+    createdAt: string;
+    createdBy: string;
+    expiresAt?: string | null;
+}
+
+export interface JoinShareLinkInfo {
+    projectId: string;
+    projectName: string;
+    roomKey: string;
+    token: string;
+    ownerId: string;
+    expiresAt?: string | null;
+}

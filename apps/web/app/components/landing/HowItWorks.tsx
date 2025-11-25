@@ -1,6 +1,3 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import { MousePointer2, Layers, Code, Rocket } from 'lucide-react';
 
 const steps = [
@@ -42,39 +39,24 @@ export function HowItWorks() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl sm:text-5xl font-bold mb-6 text-mocha-text"
-          >
+          <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-mocha-text">
             From idea to production
             <br />
             <span className="bg-gradient-to-r from-mocha-green to-mocha-teal bg-clip-text text-transparent">
               in minutes, not days
             </span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-mocha-subtext0"
-          >
+          </h2>
+          <p className="text-lg text-mocha-subtext0">
             Skyforge streamlines your entire database design workflow
-          </motion.p>
+          </p>
         </div>
 
         {/* Steps */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.15 }}
-              className="relative"
+              className="relative will-change-transform"
             >
               {/* Connector Line */}
               {index < steps.length - 1 && (
@@ -96,7 +78,7 @@ export function HowItWorks() {
                 <h3 className="text-lg font-bold text-mocha-text mb-2">{step.title}</h3>
                 <p className="text-sm text-mocha-subtext0 leading-relaxed">{step.description}</p>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

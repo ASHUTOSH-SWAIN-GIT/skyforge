@@ -32,7 +32,19 @@ RETURNING *;
 
 -- name: UpdateProjectData :one
 UPDATE projects
-SET data = $3,
-    updated_at = NOW()
-WHERE id = $1 AND user_id = $2
+SET data = $2,
+    updated_at = NOW(),
+    last_saved_at = NOW()
+WHERE id = $1
 RETURNING *;
+
+-- name: GetProjectCollaborator :one
+SELECT id, project_id, user_id, role, created_at
+FROM project_collaborators
+WHERE project_id = $1 AND user_id = $2;
+
+-- name: UpsertProjectCollaborator :exec
+INSERT INTO project_collaborators (project_id, user_id, role)
+VALUES ($1, $2, $3)
+ON CONFLICT (project_id, user_id) DO UPDATE
+SET role = EXCLUDED.role;

@@ -1,7 +1,4 @@
-'use client';
-
-import { motion } from 'framer-motion';
-import { Code2, Users, Workflow, Shield, Zap, Globe, Sparkles, Database } from 'lucide-react';
+import { Code2, Users, Workflow, Shield, Zap, Sparkles, Database } from 'lucide-react';
 
 const features = [
   {
@@ -55,52 +52,31 @@ export function Features() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-mocha-surface0/50 border border-mocha-surface1 mb-6"
-          >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-mocha-surface0/50 border border-mocha-surface1 mb-6">
             <Database className="w-4 h-4 text-mocha-mauve" />
             <span className="text-sm font-medium text-mocha-subtext1">Powerful Features</span>
-          </motion.div>
+          </div>
           
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl sm:text-5xl font-bold mb-6 text-mocha-text"
-          >
+          <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-mocha-text">
             Everything you need to
             <br />
             <span className="bg-gradient-to-r from-mocha-mauve to-mocha-blue bg-clip-text text-transparent">
               build better databases
             </span>
-          </motion.h2>
+          </h2>
           
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="text-lg text-mocha-subtext0"
-          >
+          <p className="text-lg text-mocha-subtext0">
             From solo developers to enterprise teams, Skyforge provides the complete 
             toolkit for designing, documenting, and deploying database schemas.
-          </motion.p>
+          </p>
         </div>
 
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group relative p-8 rounded-2xl bg-mocha-mantle/50 border border-mocha-surface0 hover:border-mocha-surface1 transition-all duration-500 hover:shadow-xl hover:shadow-mocha-crust/20"
+              className="group relative p-8 rounded-2xl bg-mocha-mantle/50 border border-mocha-surface0 hover:border-mocha-surface1 transition-all duration-500 hover:shadow-xl hover:shadow-mocha-crust/20 will-change-transform"
             >
               {/* Hover Gradient */}
               <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
@@ -127,7 +103,7 @@ export function Features() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

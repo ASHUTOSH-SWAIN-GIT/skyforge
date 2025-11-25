@@ -1,6 +1,3 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, Star } from 'lucide-react';
 
@@ -13,12 +10,7 @@ export function CTA() {
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center"
-        >
+        <div className="text-center">
           {/* Rating */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-mocha-surface0/50 border border-mocha-surface1 mb-8">
             <div className="flex gap-0.5">
@@ -65,21 +57,17 @@ export function CTA() {
               { value: '10K+', label: 'Developers' },
               { value: '50K+', label: 'Schemas Created' },
               { value: '99.9%', label: 'Uptime' },
-            ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
+            ].map((stat) => (
+              <div
+                key={stat.label}
                 className="text-center"
               >
                 <div className="text-3xl sm:text-4xl font-bold text-mocha-text mb-1">{stat.value}</div>
                 <div className="text-sm text-mocha-overlay0">{stat.label}</div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

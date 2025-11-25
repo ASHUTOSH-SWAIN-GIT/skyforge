@@ -86,6 +86,30 @@ func (q *Queries) GetProjectByID(ctx context.Context, id uuid.UUID) (Project, er
 	return i, err
 }
 
+const getProjectCollaborator = `-- name: GetProjectCollaborator :one
+SELECT id, project_id, user_id, role, created_at
+FROM project_collaborators
+WHERE project_id = $1 AND user_id = $2
+`
+
+type GetProjectCollaboratorParams struct {
+	ProjectID uuid.UUID `json:"project_id"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) GetProjectCollaborator(ctx context.Context, arg GetProjectCollaboratorParams) (ProjectCollaborator, error) {
+	row := q.db.QueryRowContext(ctx, getProjectCollaborator, arg.ProjectID, arg.UserID)
+	var i ProjectCollaborator
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.UserID,
+		&i.Role,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getProjectsByUser = `-- name: GetProjectsByUser :many
 SELECT p.id, p.name, p.description, p.is_public, p.last_saved_at, p.created_at, 'owner' as role
 FROM projects p
@@ -180,20 +204,20 @@ func (q *Queries) UpdateProject(ctx context.Context, arg UpdateProjectParams) (P
 
 const updateProjectData = `-- name: UpdateProjectData :one
 UPDATE projects
-SET data = $3,
-    updated_at = NOW()
-WHERE id = $1 AND user_id = $2
+SET data = $2,
+    updated_at = NOW(),
+    last_saved_at = NOW()
+WHERE id = $1
 RETURNING id, user_id, name, description, data, is_public, last_saved_at, created_at, updated_at
 `
 
 type UpdateProjectDataParams struct {
-	ID     uuid.UUID       `json:"id"`
-	UserID uuid.UUID       `json:"user_id"`
-	Data   json.RawMessage `json:"data"`
+	ID   uuid.UUID       `json:"id"`
+	Data json.RawMessage `json:"data"`
 }
 
 func (q *Queries) UpdateProjectData(ctx context.Context, arg UpdateProjectDataParams) (Project, error) {
-	row := q.db.QueryRowContext(ctx, updateProjectData, arg.ID, arg.UserID, arg.Data)
+	row := q.db.QueryRowContext(ctx, updateProjectData, arg.ID, arg.Data)
 	var i Project
 	err := row.Scan(
 		&i.ID,
@@ -207,4 +231,22 @@ func (q *Queries) UpdateProjectData(ctx context.Context, arg UpdateProjectDataPa
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const upsertProjectCollaborator = `-- name: UpsertProjectCollaborator :exec
+INSERT INTO project_collaborators (project_id, user_id, role)
+VALUES ($1, $2, $3)
+ON CONFLICT (project_id, user_id) DO UPDATE
+SET role = EXCLUDED.role
+`
+
+type UpsertProjectCollaboratorParams struct {
+	ProjectID uuid.UUID `json:"project_id"`
+	UserID    uuid.UUID `json:"user_id"`
+	Role      string    `json:"role"`
+}
+
+func (q *Queries) UpsertProjectCollaborator(ctx context.Context, arg UpsertProjectCollaboratorParams) error {
+	_, err := q.db.ExecContext(ctx, upsertProjectCollaborator, arg.ProjectID, arg.UserID, arg.Role)
+	return err
 }

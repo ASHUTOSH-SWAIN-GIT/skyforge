@@ -2,9 +2,14 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/ai"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/auth"
@@ -106,18 +111,9 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	project, err := h.getProjectForUser(r.Context(), projectID, userID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "Project not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Database error", http.StatusInternalServerError)
-		return
-	}
-
-	if project.UserID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		writeProjectAccessError(w, err)
 		return
 	}
 
@@ -128,6 +124,30 @@ func (h *ProjectHandler) GetProject(w http.ResponseWriter, r *http.Request) {
 type UpdateProjectRequest struct {
 	Data json.RawMessage `json:"data"`
 }
+
+type shareLinkResponse struct {
+	ProjectID uuid.UUID  `json:"project_id"`
+	Token     string     `json:"token"`
+	RoomKey   string     `json:"room_key"`
+	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	CreatedBy uuid.UUID  `json:"created_by"`
+}
+
+type createShareLinkRequest struct {
+	ExpiresInHours *int `json:"expiresInHours"`
+}
+
+type joinShareLinkResponse struct {
+	ProjectID   uuid.UUID  `json:"project_id"`
+	ProjectName string     `json:"project_name"`
+	RoomKey     string     `json:"room_key"`
+	Token       string     `json:"token"`
+	OwnerID     uuid.UUID  `json:"owner_id"`
+	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
+}
+
+var errProjectAccessDenied = errors.New("project access denied")
 
 func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
@@ -160,16 +180,16 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, err := h.getProjectForUser(r.Context(), projectID, userID); err != nil {
+		writeProjectAccessError(w, err)
+		return
+	}
+
 	project, err := h.DB.UpdateProjectData(r.Context(), database.UpdateProjectDataParams{
-		ID:     projectID,
-		UserID: userID,
-		Data:   cleanData,
+		ID:   projectID,
+		Data: cleanData,
 	})
 	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "Project not found or access denied", http.StatusForbidden)
-			return
-		}
 		http.Error(w, "Failed to update project", http.StatusInternalServerError)
 		return
 	}
@@ -188,14 +208,9 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 	projectIDStr := r.PathValue("id")
 	projectID, _ := uuid.Parse(projectIDStr)
 
-	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	project, err := h.getProjectForUser(r.Context(), projectID, userID)
 	if err != nil {
-		http.Error(w, "Project not found", http.StatusNotFound)
-		return
-	}
-
-	if project.UserID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		writeProjectAccessError(w, err)
 		return
 	}
 
@@ -229,14 +244,9 @@ func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Requ
 	projectIDStr := r.PathValue("id")
 	projectID, _ := uuid.Parse(projectIDStr)
 
-	project, err := h.DB.GetProjectByID(r.Context(), projectID)
+	project, err := h.getProjectForUser(r.Context(), projectID, userID)
 	if err != nil {
-		http.Error(w, "Project not found", http.StatusNotFound)
-		return
-	}
-
-	if project.UserID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		writeProjectAccessError(w, err)
 		return
 	}
 
@@ -284,14 +294,8 @@ func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.DB.GetProjectByID(r.Context(), projectID)
-	if err != nil {
-		http.Error(w, "Project not found", http.StatusNotFound)
-		return
-	}
-
-	if project.UserID != userID {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+	if _, err := h.getProjectForUser(r.Context(), projectID, userID); err != nil {
+		writeProjectAccessError(w, err)
 		return
 	}
 
@@ -324,9 +328,8 @@ func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
 
 	// Update project with imported canvas data
 	updatedProject, err := h.DB.UpdateProjectData(r.Context(), database.UpdateProjectDataParams{
-		ID:     projectID,
-		UserID: userID,
-		Data:   canvasData,
+		ID:   projectID,
+		Data: canvasData,
 	})
 	if err != nil {
 		http.Error(w, "Failed to update project", http.StatusInternalServerError)
@@ -335,6 +338,178 @@ func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updatedProject)
+}
+
+func (h *ProjectHandler) GetShareLink(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := h.getProjectForUser(r.Context(), projectID, userID); err != nil {
+		writeProjectAccessError(w, err)
+		return
+	}
+
+	link, err := h.DB.GetActiveShareLinkForProject(r.Context(), projectID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "No active share link", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to load share link", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(makeShareLinkResponse(link))
+}
+
+func (h *ProjectHandler) CreateShareLink(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	project, err := h.getProjectForUser(r.Context(), projectID, userID)
+	if err != nil {
+		writeProjectAccessError(w, err)
+		return
+	}
+	if project.UserID != userID {
+		http.Error(w, "Only the project owner can create share links", http.StatusForbidden)
+		return
+	}
+
+	var req createShareLinkRequest
+	if r.Body != nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil && !errors.Is(err, io.EOF) {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+	}
+
+	var expires sql.NullTime
+	if req.ExpiresInHours != nil && *req.ExpiresInHours > 0 {
+		expires = sql.NullTime{
+			Time:  time.Now().Add(time.Duration(*req.ExpiresInHours) * time.Hour),
+			Valid: true,
+		}
+	}
+
+	if err := h.DB.RevokeShareLinksForProject(r.Context(), projectID); err != nil {
+		http.Error(w, "Failed to reset previous share links", http.StatusInternalServerError)
+		return
+	}
+
+	token := generateCollaborationToken()
+	roomKey := generateCollaborationToken()
+
+	link, err := h.DB.CreateProjectShareLink(r.Context(), database.CreateProjectShareLinkParams{
+		ProjectID: projectID,
+		Token:     token,
+		RoomKey:   roomKey,
+		CreatedBy: userID,
+		ExpiresAt: expires,
+	})
+	if err != nil {
+		http.Error(w, "Failed to create share link", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(makeShareLinkResponse(link))
+}
+
+func (h *ProjectHandler) JoinShareLink(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	token := r.PathValue("token")
+	if token == "" {
+		http.Error(w, "Share token is required", http.StatusBadRequest)
+		return
+	}
+
+	link, err := h.DB.GetShareLinkByToken(r.Context(), token)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Share link not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to load share link", http.StatusInternalServerError)
+		return
+	}
+
+	if link.ExpiresAt.Valid && time.Now().After(link.ExpiresAt.Time) {
+		_ = h.DB.RevokeShareLinksForProject(r.Context(), link.ProjectID)
+		http.Error(w, "Share link expired", http.StatusGone)
+		return
+	}
+
+	project, err := h.DB.GetProjectByID(r.Context(), link.ProjectID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Project not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "Failed to load project", http.StatusInternalServerError)
+		return
+	}
+
+	if project.UserID != userID {
+		if err := h.DB.UpsertProjectCollaborator(r.Context(), database.UpsertProjectCollaboratorParams{
+			ProjectID: project.ID,
+			UserID:    userID,
+			Role:      "editor",
+		}); err != nil {
+			http.Error(w, "Failed to add collaborator", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	resp := joinShareLinkResponse{
+		ProjectID:   project.ID,
+		ProjectName: project.Name,
+		RoomKey:     link.RoomKey,
+		Token:       link.Token,
+		OwnerID:     project.UserID,
+	}
+	if link.ExpiresAt.Valid {
+		resp.ExpiresAt = &link.ExpiresAt.Time
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 func (h *ProjectHandler) authorize(r *http.Request) (uuid.UUID, error) {
@@ -347,6 +522,59 @@ func (h *ProjectHandler) authorize(r *http.Request) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return uuid.Parse(userIDStr)
+}
+
+func (h *ProjectHandler) getProjectForUser(ctx context.Context, projectID, userID uuid.UUID) (database.Project, error) {
+	project, err := h.DB.GetProjectByID(ctx, projectID)
+	if err != nil {
+		return database.Project{}, err
+	}
+
+	if project.UserID == userID {
+		return project, nil
+	}
+
+	_, err = h.DB.GetProjectCollaborator(ctx, database.GetProjectCollaboratorParams{
+		ProjectID: projectID,
+		UserID:    userID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return database.Project{}, errProjectAccessDenied
+		}
+		return database.Project{}, err
+	}
+	return project, nil
+}
+
+func writeProjectAccessError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, errProjectAccessDenied):
+		http.Error(w, "Forbidden", http.StatusForbidden)
+	case errors.Is(err, sql.ErrNoRows):
+		http.Error(w, "Project not found", http.StatusNotFound)
+	default:
+		http.Error(w, "Database error", http.StatusInternalServerError)
+	}
+}
+
+func makeShareLinkResponse(link database.ProjectShareLink) shareLinkResponse {
+	var expires *time.Time
+	if link.ExpiresAt.Valid {
+		expires = &link.ExpiresAt.Time
+	}
+	return shareLinkResponse{
+		ProjectID: link.ProjectID,
+		Token:     link.Token,
+		RoomKey:   link.RoomKey,
+		CreatedAt: link.CreatedAt,
+		ExpiresAt: expires,
+		CreatedBy: link.CreatedBy,
+	}
+}
+
+func generateCollaborationToken() string {
+	return strings.ReplaceAll(uuid.NewString(), "-", "")
 }
 
 func normalizeCanvasJSON(raw json.RawMessage) (json.RawMessage, error) {

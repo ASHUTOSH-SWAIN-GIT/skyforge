@@ -48,6 +48,18 @@ type ProjectCollaborator struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type ProjectShareLink struct {
+	ID         uuid.UUID    `json:"id"`
+	ProjectID  uuid.UUID    `json:"project_id"`
+	Token      string       `json:"token"`
+	RoomKey    string       `json:"room_key"`
+	CreatedBy  uuid.UUID    `json:"created_by"`
+	ExpiresAt  sql.NullTime `json:"expires_at"`
+	RevokedAt  sql.NullTime `json:"revoked_at"`
+	CreatedAt  time.Time    `json:"created_at"`
+	LastUsedAt sql.NullTime `json:"last_used_at"`
+}
+
 type User struct {
 	ID        uuid.UUID      `json:"id"`
 	Email     string         `json:"email"`

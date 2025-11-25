@@ -1,5 +1,5 @@
 import { api } from "./api";
-import { Project } from "../types";
+import { JoinShareLinkInfo, Project, ShareLinkInfo } from "../types";
 
 export async function getMyProjects() {
     return api<Project[]>("/projects");
@@ -75,5 +75,61 @@ export async function importSQL(projectId: string, file: File): Promise<Project>
     }
 
     return res.json();
+}
+
+type ShareLinkApiResponse = {
+    project_id: string;
+    token: string;
+    room_key: string;
+    created_at: string;
+    created_by: string;
+    expires_at?: string | null;
+};
+
+type JoinShareLinkApiResponse = {
+    project_id: string;
+    project_name: string;
+    room_key: string;
+    token: string;
+    owner_id: string;
+    expires_at?: string | null;
+};
+
+const mapShareLink = (payload: ShareLinkApiResponse): ShareLinkInfo => ({
+    projectId: payload.project_id,
+    token: payload.token,
+    roomKey: payload.room_key,
+    createdAt: payload.created_at,
+    createdBy: payload.created_by,
+    expiresAt: payload.expires_at ?? null,
+});
+
+const mapJoinShareLink = (payload: JoinShareLinkApiResponse): JoinShareLinkInfo => ({
+    projectId: payload.project_id,
+    projectName: payload.project_name,
+    roomKey: payload.room_key,
+    token: payload.token,
+    ownerId: payload.owner_id,
+    expiresAt: payload.expires_at ?? null,
+});
+
+export async function getProjectShareLink(projectId: string): Promise<ShareLinkInfo> {
+    const response = await api<ShareLinkApiResponse>(`/projects/${projectId}/share-link`);
+    return mapShareLink(response);
+}
+
+export async function createProjectShareLink(projectId: string, expiresInHours?: number): Promise<ShareLinkInfo> {
+    const response = await api<ShareLinkApiResponse>(`/projects/${projectId}/share-link`, {
+        method: "POST",
+        body: expiresInHours ? { expiresInHours } : {},
+    });
+    return mapShareLink(response);
+}
+
+export async function joinShareLink(token: string): Promise<JoinShareLinkInfo> {
+    const response = await api<JoinShareLinkApiResponse>(`/projects/share-links/${token}/join`, {
+        method: "POST",
+    });
+    return mapJoinShareLink(response);
 }
 
