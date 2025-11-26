@@ -56,6 +56,12 @@ export async function updateProject(
     });
 }
 
+export async function deleteProject(projectId: string) {
+    return api<void>(`/projects/${projectId}`, {
+        method: "DELETE",
+    });
+}
+
 export async function importSQL(projectId: string, file: File): Promise<Project> {
     const formData = new FormData();
     formData.append("sqlFile", file);

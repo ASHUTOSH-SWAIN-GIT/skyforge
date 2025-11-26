@@ -65,6 +65,21 @@ func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (P
 	return i, err
 }
 
+const deleteProject = `-- name: DeleteProject :exec
+DELETE FROM projects
+WHERE id = $1 AND user_id = $2
+`
+
+type DeleteProjectParams struct {
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) DeleteProject(ctx context.Context, arg DeleteProjectParams) error {
+	_, err := q.db.ExecContext(ctx, deleteProject, arg.ID, arg.UserID)
+	return err
+}
+
 const getProjectByID = `-- name: GetProjectByID :one
 SELECT id, user_id, name, description, data, is_public, last_saved_at, created_at, updated_at FROM projects WHERE id = $1
 `
@@ -161,21 +176,6 @@ func (q *Queries) GetProjectsByUser(ctx context.Context, userID uuid.UUID) ([]Ge
 		return nil, err
 	}
 	return items, nil
-}
-
-const removeProjectCollaborator = `-- name: RemoveProjectCollaborator :exec
-DELETE FROM project_collaborators
-WHERE project_id = $1 AND user_id = $2
-`
-
-type RemoveProjectCollaboratorParams struct {
-	ProjectID uuid.UUID `json:"project_id"`
-	UserID    uuid.UUID `json:"user_id"`
-}
-
-func (q *Queries) RemoveProjectCollaborator(ctx context.Context, arg RemoveProjectCollaboratorParams) error {
-	_, err := q.db.ExecContext(ctx, removeProjectCollaborator, arg.ProjectID, arg.UserID)
-	return err
 }
 
 const updateProject = `-- name: UpdateProject :one

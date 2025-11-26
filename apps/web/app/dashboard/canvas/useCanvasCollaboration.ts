@@ -91,14 +91,24 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     // Clear interval on cleanup
     const cleanupInterval = () => clearInterval(connectionCheck);
 
-    if (userId && userName) {
-      awareness.setLocalStateField("user", {
-        id: userId,
-        name: userName,
-        color: getColorForUser(userId),
-        avatarUrl: userAvatarUrl,
-      });
-    }
+    // Set awareness state - do this immediately and also after connection
+    const setAwarenessState = () => {
+      if (userId && userName) {
+        const userPresence: CollaboratorPresence = {
+          id: userId,
+          name: userName,
+          color: getColorForUser(userId),
+          avatarUrl: userAvatarUrl ?? null,
+        };
+        awareness.setLocalStateField("user", userPresence);
+        // Force awareness update
+        awareness.setLocalStateField("updated", Date.now());
+        console.log("[Collaboration] Set awareness state for user:", userName);
+      }
+    };
+
+    // Set awareness state immediately
+    setAwarenessState();
 
     const nodesArray = doc.getArray<Node>("nodes");
     const edgesArray = doc.getArray<Edge>("edges");
@@ -143,6 +153,11 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       if (event.status === "connected") {
         setStatus("connected");
         clearInterval(connectionCheck);
+        // Re-set awareness state after connection to ensure it's synced
+        setTimeout(() => {
+          setAwarenessState();
+          updatePeers();
+        }, 300);
       } else if (event.status === "connecting") {
         setStatus("connecting");
       } else {
@@ -159,18 +174,36 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
         const states = awareness.getStates();
         const allPeers: CollaboratorPresence[] = [];
         
+        console.log("[Collaboration] Awareness states count:", states.size);
+        
         // Iterate through all client states
         states.forEach((state, clientId) => {
+          console.log(`[Collaboration] Client ${clientId} state:`, state);
           const userData = (state as { user?: CollaboratorPresence }).user;
           if (userData && userData.id && userData.name) {
+            console.log(`[Collaboration] Found peer: ${userData.name} (${userData.id})`);
             allPeers.push(userData);
           }
         });
         
-        // Ensure local user is included if they have user data
+        // Get local state separately
+        const localState = awareness.getLocalState();
+        if (localState) {
+          const localUser = (localState as { user?: CollaboratorPresence }).user;
+          if (localUser && localUser.id && localUser.name) {
+            const localExists = allPeers.some(p => p.id === localUser.id);
+            if (!localExists) {
+              console.log(`[Collaboration] Adding local user: ${localUser.name}`);
+              allPeers.push(localUser);
+            }
+          }
+        }
+        
+        // Also ensure local user is included if they have user data (fallback)
         if (userId && userName) {
           const localUserExists = allPeers.some(p => p.id === userId);
           if (!localUserExists) {
+            console.log(`[Collaboration] Adding local user (fallback): ${userName}`);
             allPeers.push({
               id: userId,
               name: userName,
@@ -190,7 +223,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
         
         const uniquePeers = Array.from(uniquePeersMap.values());
         
-        console.log("[Collaboration] Peers updated:", uniquePeers.length, uniquePeers.map(p => p.name));
+        console.log("[Collaboration] Peers updated:", uniquePeers.length, uniquePeers.map(p => `${p.name} (${p.id})`));
         
         setPeers(uniquePeers);
       } catch (error) {
@@ -211,16 +244,26 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     
     // Also listen to sync events for peer connections
     const syncHandler = () => {
+      console.log("[Collaboration] Sync event fired");
+      // Re-set awareness to ensure it's synced
+      setAwarenessState();
       // Small delay to ensure awareness state is synced
-      setTimeout(updatePeers, 200);
+      setTimeout(updatePeers, 300);
     };
     provider.on("sync", syncHandler);
     
     // Initial update with delay to allow awareness to sync
-    setTimeout(updatePeers, 500);
+    setTimeout(() => {
+      setAwarenessState();
+      updatePeers();
+    }, 1000);
     
     // Periodic check as fallback (every 2 seconds)
-    const peerCheckInterval = setInterval(updatePeers, 2000);
+    const peerCheckInterval = setInterval(() => {
+      // Re-set awareness periodically to ensure it stays synced
+      setAwarenessState();
+      updatePeers();
+    }, 2000);
 
     const unsubscribeStore = useCanvasStore.subscribe((state, previousState) => {
       if (state.nodes !== previousState?.nodes && !applyingNodes.current) {

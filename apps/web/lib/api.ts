@@ -4,10 +4,14 @@ type FetchOptions = {
     headers?:Record<string,string>
 }
 
-export async function api <T>(path :string,options:FetchOptions = {}){
-    const { method= "GET" , body , headers = {} } = options;
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_SERVER_URL?.replace(/\/$/, "") || null;
 
-    const res =  await fetch(`/api${path}` , {
+export async function api<T>(path: string, options: FetchOptions = {}) {
+  const { method = "GET", body, headers = {} } = options;
+  const url = API_BASE_URL ? `${API_BASE_URL}${path}` : `/api${path}`;
+
+  const res = await fetch(url, {
         method,
         credentials: "include", // Include cookies in the request
         headers: {

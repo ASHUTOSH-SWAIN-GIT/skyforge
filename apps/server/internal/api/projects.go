@@ -198,6 +198,42 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(project)
 }
 
+func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	project, err := h.getProjectForUser(r.Context(), projectID, userID)
+	if err != nil {
+		writeProjectAccessError(w, err)
+		return
+	}
+
+	if project.UserID != userID {
+		http.Error(w, "Only project owners can delete projects", http.StatusForbidden)
+		return
+	}
+
+	if err := h.DB.DeleteProject(r.Context(), database.DeleteProjectParams{
+		ID:     projectID,
+		UserID: userID,
+	}); err != nil {
+		http.Error(w, "Failed to delete project", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request) {
 	userID, err := h.authorize(r)
 	if err != nil {

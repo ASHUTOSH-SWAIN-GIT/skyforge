@@ -57,6 +57,7 @@ type User struct {
 type DatabaseConnection struct {
 	ID           uuid.UUID     `json:"id"`
 	UserID       uuid.UUID     `json:"user_id"`
+	ProjectID    uuid.NullUUID `json:"project_id"`
 	Name         string        `json:"name"`
 	Host         string        `json:"host"`
 	Port         int32         `json:"port"`
@@ -67,5 +68,4 @@ type DatabaseConnection struct {
 	SslMode      string        `json:"ssl_mode"`
 	CreatedAt    time.Time     `json:"created_at"`
 	UpdatedAt    time.Time     `json:"updated_at"`
-	ProjectID    uuid.NullUUID `json:"project_id"`
 }

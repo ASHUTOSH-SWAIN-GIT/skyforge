@@ -38,6 +38,10 @@ SET data = $2,
 WHERE id = $1
 RETURNING *;
 
+-- name: DeleteProject :exec
+DELETE FROM projects
+WHERE id = $1 AND user_id = $2;
+
 -- name: GetProjectCollaborator :one
 SELECT id, project_id, user_id, role, created_at
 FROM project_collaborators

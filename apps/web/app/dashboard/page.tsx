@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMyProjects } from "../../lib/projects";
+import { deleteProject as deleteProjectApi, getMyProjects } from "../../lib/projects";
 import { Project } from "../../types";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { Plus, Database, Clock, MoreVertical, ArrowRight, Filter, SortAsc } from "lucide-react";
+import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2 } from "lucide-react";
 
 export default function WorkspacePage() {
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchProjects = async () => {
     try {
@@ -28,6 +31,31 @@ export default function WorkspacePage() {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  useEffect(() => {
+    const handleWindowClick = () => setMenuProjectId(null);
+    window.addEventListener("click", handleWindowClick);
+    return () => window.removeEventListener("click", handleWindowClick);
+  }, []);
+
+  const handleDeleteProject = async (projectId: string, projectName: string) => {
+    const confirmed = window.confirm(`Delete project \"${projectName}\"? This action cannot be undone.`);
+    if (!confirmed) {
+      return;
+    }
+    setErrorMessage(null);
+    setDeletingProjectId(projectId);
+    try {
+      await deleteProjectApi(projectId);
+      setMenuProjectId(null);
+      await fetchProjects();
+    } catch (error) {
+      console.error("Failed to delete project", error);
+      setErrorMessage(error instanceof Error ? error.message : "Failed to delete project");
+    } finally {
+      setDeletingProjectId(null);
+    }
+  };
 
   const getTableCount = (data: any) => {
     if (!data) return 0;
@@ -87,11 +115,17 @@ export default function WorkspacePage() {
       />
       
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-      <div>
+        <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-mocha-mauve to-mocha-blue bg-clip-text text-transparent">Workspace</h1>
         <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
         </div>
       </div>
+
+      {errorMessage && (
+        <div className="rounded-xl border border-mocha-red/30 bg-mocha-red/10 text-mocha-red px-4 py-3 text-sm">
+          {errorMessage}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {/* Create New Project Card */}
@@ -133,9 +167,39 @@ export default function WorkspacePage() {
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-mocha-mauve/20 to-mocha-blue/20 border border-mocha-surface1 flex items-center justify-center text-mocha-mauve group-hover:scale-105 transition-transform duration-300">
                   <Database className="w-6 h-6" />
                 </div>
-                <button className="p-2 hover:bg-mocha-surface1 rounded-lg transition-colors text-mocha-overlay0 hover:text-mocha-text opacity-0 group-hover:opacity-100">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setMenuProjectId((prev) => (prev === project.id ? null : project.id));
+                    }}
+                    className="p-2 hover:bg-mocha-surface1 rounded-lg transition-colors text-mocha-overlay0 hover:text-mocha-text opacity-0 group-hover:opacity-100"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  {menuProjectId === project.id && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 mt-2 w-44 rounded-xl border border-mocha-surface0 bg-mocha-base/95 shadow-lg z-20"
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteProject(project.id, project.name);
+                        }}
+                        disabled={deletingProjectId === project.id}
+                        className="flex w-full items-center gap-2 px-4 py-3 text-sm text-mocha-red hover:bg-mocha-red/10 rounded-xl transition-colors disabled:opacity-60"
+                      >
+                        {deletingProjectId === project.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                        Delete Project
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Body */}
