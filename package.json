@@ -1,6 +1,11 @@
 {
   "name": "DbAlly",
   "private": true,
+  "pnpm": {
+    "overrides": {
+      "yjs": "^13.6.27"
+    }
+  },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
