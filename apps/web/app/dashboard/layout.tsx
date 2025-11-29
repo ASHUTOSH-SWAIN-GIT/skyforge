@@ -1,17 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "../../hooks/useUser";
-import { 
-  LayoutGrid, 
-  Database, 
-  Users,
-  LogOut,
-  ChevronRight,
-  ChevronDown
-} from "lucide-react";
+import { LogOut, ChevronDown } from "lucide-react";
 
 export default function DashboardLayout({
   children,
@@ -24,7 +16,7 @@ export default function DashboardLayout({
   const [showLogout, setShowLogout] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   
-  // Check if we're on a canvas page - don't show sidebar for canvas
+  // Check if we're on a canvas page - don't show header for canvas
   const isCanvasPage = pathname?.includes("/canvas/");
 
   // Close menu when clicking outside
@@ -44,37 +36,19 @@ export default function DashboardLayout({
     };
   }, [showLogout]);
 
-  const navItems = [
-    {
-      label: "Workspace",
-      href: "/dashboard",
-      icon: LayoutGrid,
-    },
-    {
-      label: "Connect DB",
-      href: "/dashboard/connect-db",
-      icon: Database,
-    },
-    {
-      label: "Collaborate",
-      href: "/dashboard/collaborate",
-      icon: Users,
-    },
-  ];
-
   // Full page layout for canvas
   if (isCanvasPage) {
     return <div className="min-h-screen bg-mocha-base">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen bg-mocha-base text-mocha-text font-sans antialiased">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-mocha-surface0 flex flex-col fixed inset-y-0 left-0 bg-mocha-mantle z-50">
-        {/* Logo Area */}
-        <div className="h-16 flex items-center px-6 border-b border-mocha-surface0">
+    <div className="min-h-screen bg-mocha-base text-mocha-text font-sans antialiased">
+      {/* Top Header */}
+      <header className="h-16 border-b border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-sm fixed top-0 left-0 right-0 z-50">
+        <div className="max-w-6xl mx-auto h-full px-6 lg:px-8 flex items-center justify-between">
+          {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded bg-mocha-mauve flex items-center justify-center">
+            <div className="h-7 w-7 rounded-lg bg-mocha-mauve flex items-center justify-center">
               <svg 
                 viewBox="0 0 24 24" 
                 fill="none" 
@@ -87,128 +61,89 @@ export default function DashboardLayout({
             </div>
             <span className="font-bold text-lg tracking-tight text-mocha-text">Skyforge</span>
           </div>
-        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          <div className="text-xs font-medium text-mocha-overlay0 mb-4 px-2 uppercase tracking-wider">
-            Menu
-          </div>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 group ${
-                  isActive 
-                    ? "bg-mocha-surface0 text-mocha-mauve font-medium shadow-sm" 
-                    : "text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className={`w-4 h-4 ${isActive ? "text-mocha-mauve" : "text-mocha-overlay0 group-hover:text-mocha-text"}`} />
-                  <span>{item.label}</span>
-                </div>
-                {isActive && <ChevronRight className="w-3 h-3 opacity-50 text-mocha-mauve" />}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Footer - User Profile & Logout */}
-        <div className="p-4 border-t border-mocha-surface0" ref={userMenuRef}>
-          {/* User Profile - Clickable */}
-          <button
-            onClick={() => setShowLogout(!showLogout)}
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-md hover:bg-mocha-surface0 transition-colors group"
-          >
-            {(() => {
-              const avatarUrlRaw = user?.avatar_url;
-              let avatarUrl: string | null = null;
-              
-              if (avatarUrlRaw) {
-                if (typeof avatarUrlRaw === "string") {
-                  avatarUrl = avatarUrlRaw;
-                } else if (typeof avatarUrlRaw === "object" && avatarUrlRaw !== null && "String" in avatarUrlRaw && "Valid" in avatarUrlRaw) {
-                  const nullString = avatarUrlRaw as { String: string; Valid: boolean };
-                  if (nullString.Valid && nullString.String) {
-                    avatarUrl = nullString.String;
-                  }
-                }
-              }
-              
-              const hasAvatar = avatarUrl && avatarUrl.trim() !== "";
-              
-              if (hasAvatar) {
-                return (
-                  <img
-                    src={avatarUrl!}
-                    alt={user?.name || "User"}
-                    className="h-8 w-8 rounded-full border border-mocha-surface1 object-cover flex-shrink-0"
-                    onError={(e) => {
-                      // Hide image on error, show fallback
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                );
-              }
-              return (
-                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-mocha-surface1 to-mocha-surface0 flex items-center justify-center text-xs font-medium border border-mocha-surface1 flex-shrink-0 text-mocha-text">
-                  {user?.name?.charAt(0)?.toUpperCase() || "U"}
-                </div>
-              );
-            })()}
-            <div className="flex-1 overflow-hidden text-left min-w-0">
-              <p className="text-sm font-medium truncate text-mocha-text">{user?.name || "User"}</p>
-            </div>
-            {showLogout ? (
-              <ChevronDown className="w-4 h-4 text-mocha-overlay0 flex-shrink-0" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-mocha-overlay0 group-hover:text-mocha-text flex-shrink-0" />
-            )}
-          </button>
-          
-          {/* Logout Button - Conditional */}
-          {showLogout && (
-            <button 
-              onClick={async () => {
-                try {
-                  // Call backend logout endpoint to clear HttpOnly cookie
-                  await fetch("/api/auth/logout", {
-                    method: "POST",
-                    credentials: "include",
-                  });
-                  
-                  // Clear any cached data
-                  if (typeof window !== 'undefined') {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                  }
-                  
-                  // Force a hard redirect to landing page to clear all state
-                  window.location.href = "/";
-                } catch (error) {
-                  console.error("Logout error:", error);
-                  // Fallback: try to clear cookie manually and redirect
-                document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                  window.location.href = "/";
-                }
-              }}
-              className="flex items-center gap-3 w-full px-3 py-2 mt-2 text-sm text-mocha-subtext0 hover:text-mocha-red hover:bg-mocha-red/10 rounded-md transition-colors"
+          {/* User Menu */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setShowLogout(!showLogout)}
+              className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-mocha-surface0 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
+              {(() => {
+                const avatarUrlRaw = user?.avatar_url;
+                let avatarUrl: string | null = null;
+                
+                if (avatarUrlRaw) {
+                  if (typeof avatarUrlRaw === "string") {
+                    avatarUrl = avatarUrlRaw;
+                  } else if (typeof avatarUrlRaw === "object" && avatarUrlRaw !== null && "String" in avatarUrlRaw && "Valid" in avatarUrlRaw) {
+                    const nullString = avatarUrlRaw as { String: string; Valid: boolean };
+                    if (nullString.Valid && nullString.String) {
+                      avatarUrl = nullString.String;
+                    }
+                  }
+                }
+                
+                const hasAvatar = avatarUrl && avatarUrl.trim() !== "";
+                
+                if (hasAvatar) {
+                  return (
+                    <img
+                      src={avatarUrl!}
+                      alt={user?.name || "User"}
+                      className="h-8 w-8 rounded-full border border-mocha-surface1 object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  );
+                }
+                return (
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-mocha-surface1 to-mocha-surface0 flex items-center justify-center text-xs font-medium border border-mocha-surface1 text-mocha-text">
+                    {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                  </div>
+                );
+              })()}
+              <span className="text-sm font-medium text-mocha-text hidden sm:block">{user?.name || "User"}</span>
+              <ChevronDown className={`w-4 h-4 text-mocha-overlay0 transition-transform ${showLogout ? "rotate-180" : ""}`} />
             </button>
-          )}
+            
+            {/* Dropdown Menu */}
+            {showLogout && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-mocha-mantle border border-mocha-surface0 rounded-lg shadow-xl py-1 z-50">
+                <button 
+                  onClick={async () => {
+                    try {
+                      await fetch("/api/auth/logout", {
+                        method: "POST",
+                        credentials: "include",
+                      });
+                      
+                      if (typeof window !== 'undefined') {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                      }
+                      
+                      window.location.href = "/";
+                    } catch (error) {
+                      console.error("Logout error:", error);
+                      document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                      window.location.href = "/";
+                    }
+                  }}
+                  className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-mocha-subtext0 hover:text-mocha-red hover:bg-mocha-red/10 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </aside>
+      </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 ml-64 min-h-screen bg-mocha-base">
-        <div className="max-w-6xl mx-auto p-8 lg:p-12 animate-in fade-in duration-500">
+      <main className="pt-16 min-h-screen bg-mocha-base">
+        <div className="max-w-6xl mx-auto p-6 lg:p-10">
           {children}
         </div>
       </main>

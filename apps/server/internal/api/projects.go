@@ -341,7 +341,7 @@ func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	file, header, err := r.FormFile("sqlFile")
+	file, _, err := r.FormFile("sqlFile")
 	if err != nil {
 		http.Error(w, "No file uploaded", http.StatusBadRequest)
 		return
@@ -349,8 +349,8 @@ func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	// Read file content
-	sqlContent := make([]byte, header.Size)
-	if _, err := file.Read(sqlContent); err != nil {
+	sqlContent, err := io.ReadAll(file)
+	if err != nil {
 		http.Error(w, "Failed to read file", http.StatusInternalServerError)
 		return
 	}
