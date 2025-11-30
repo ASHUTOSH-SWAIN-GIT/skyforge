@@ -43,11 +43,6 @@ export function Footer() {
           {/* Brand */}
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-6">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-mocha-mauve to-mocha-blue flex items-center justify-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-5 h-5 text-mocha-crust">
-                  <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
               <span className="text-xl font-bold text-mocha-text">Skyforge</span>
             </Link>
             <p className="text-mocha-subtext0 text-sm max-w-xs mb-6 leading-relaxed">

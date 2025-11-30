@@ -65,8 +65,11 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
       <div className="w-full max-w-md transform rounded-xl border border-mocha-surface0 bg-mocha-base p-6 shadow-2xl transition-all relative">
         <h2 className="text-xl font-semibold text-mocha-text mb-4">Create New Project</h2>
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-            {error}
+          <div className="mb-4 p-3 rounded-lg bg-mocha-red/10 border border-mocha-red/20 text-mocha-red text-sm flex items-start gap-2">
+            <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -24,6 +24,8 @@ import {
   createProjectShareLink,
   joinShareLink,
   aiGenerateTables,
+  getProjectCollaborators,
+  ProjectCollaborator,
 } from "../../../../lib/projects";
 import { Project, ShareLinkInfo } from "../../../../types";
 import {
@@ -43,6 +45,10 @@ import {
   Sparkles,
   X,
   Loader2,
+  AlertCircle,
+  CheckCircle,
+  Users,
+  Crown,
 } from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
@@ -80,6 +86,21 @@ function CanvasInner() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [projectMembers, setProjectMembers] = useState<ProjectCollaborator[]>([]);
+  const [isMembersLoading, setIsMembersLoading] = useState(false);
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const showToast = useCallback((message: string, type: "success" | "error") => {
+    setToast({ message, type });
+  }, []);
 
   const {
     nodes,
@@ -89,6 +110,7 @@ function CanvasInner() {
     addTable,
     loadFromData,
     exportToData,
+    deleteEdge,
   } = useCanvasStore();
 
   const { user } = useUser();
@@ -129,6 +151,25 @@ function CanvasInner() {
   const extraPeers = peers.length - displayedPeers.length;
 
   const { fitView, zoomIn, zoomOut, screenToFlowPosition } = useReactFlow();
+
+  // Deduplicate nodes and edges to prevent React key warnings
+  const uniqueNodes = useMemo(() => {
+    const seen = new Set<string>();
+    return nodes.filter((node) => {
+      if (seen.has(node.id)) return false;
+      seen.add(node.id);
+      return true;
+    });
+  }, [nodes]);
+
+  const uniqueEdges = useMemo(() => {
+    const seen = new Set<string>();
+    return edges.filter((edge) => {
+      if (seen.has(edge.id)) return false;
+      seen.add(edge.id);
+      return true;
+    });
+  }, [edges]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -260,6 +301,43 @@ function CanvasInner() {
     };
   }, [projectId, canLoadProject, shareTokenParam]);
 
+  // Fetch project members/collaborators
+  useEffect(() => {
+    if (!projectId || !canLoadProject) return;
+
+    let cancelled = false;
+
+    const fetchMembers = async () => {
+      try {
+        setIsMembersLoading(true);
+        const members = await getProjectCollaborators(projectId);
+        if (!cancelled) {
+          // Deduplicate members by ID
+          const uniqueMembers = members.filter(
+            (member, index, self) => 
+              index === self.findIndex((m) => m.id === member.id)
+          );
+          setProjectMembers(uniqueMembers);
+        }
+      } catch (error) {
+        console.error("Failed to fetch project members", error);
+        if (!cancelled) {
+          setProjectMembers([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsMembersLoading(false);
+        }
+      }
+    };
+
+    fetchMembers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, canLoadProject]);
+
   const handleSave = useCallback(async () => {
     if (!project) return;
     
@@ -269,12 +347,14 @@ function CanvasInner() {
       await updateProject(projectId, {
         data: canvasData,
       });
+      showToast("Project saved successfully", "success");
     } catch (error) {
       console.error("Failed to save project", error);
+      showToast("Failed to save project. Please try again.", "error");
     } finally {
       setIsSaving(false);
     }
-  }, [project, projectId, exportToData]);
+  }, [project, projectId, exportToData, showToast]);
 
   const handleAddTable = useCallback(() => {
     // Add table at center of viewport
@@ -337,28 +417,29 @@ function CanvasInner() {
           console.error("Failed to parse imported canvas data", error);
         }
       }
+      showToast("SQL imported successfully", "success");
     } catch (error) {
       console.error("Failed to import SQL", error);
-      alert(error instanceof Error ? error.message : "Failed to import SQL file");
+      showToast(error instanceof Error ? error.message : "Failed to import SQL file", "error");
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
-  }, [project, projectId, loadFromData, fitView]);
+  }, [project, projectId, loadFromData, fitView, showToast]);
 
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.name.endsWith('.sql')) {
       handleImportSQL(file);
     } else {
-      alert("Please select a valid SQL file (.sql)");
+      showToast("Please select a valid SQL file (.sql)", "error");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     }
-  }, [handleImportSQL]);
+  }, [handleImportSQL, showToast]);
 
   const handleExport = useCallback(async () => {
     if (!project) return;
@@ -370,13 +451,12 @@ function CanvasInner() {
       setSqlPreview(sql);
     } catch (error) {
       console.error("Failed to export SQL", error);
-      setSqlPreview(
-        `Failed to generate SQL: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      showToast("Failed to generate SQL. Please try again.", "error");
+      setSqlPreview(null);
     } finally {
       setIsExporting(false);
     }
-  }, [project]);
+  }, [project, showToast]);
 
   const handleAIGenerate = useCallback(async () => {
     if (!project || !aiPrompt.trim()) return;
@@ -412,6 +492,9 @@ function CanvasInner() {
       setIsAIChatOpen(false);
       setAiPrompt("");
       
+      // Show success toast
+      showToast(`Generated ${generatedData.nodes.length} tables successfully`, "success");
+      
       // Fit view after adding new nodes
       setTimeout(() => fitView({ padding: 0.2 }), 100);
     } catch (error) {
@@ -420,7 +503,7 @@ function CanvasInner() {
     } finally {
       setIsAIGenerating(false);
     }
-  }, [project, aiPrompt, nodes, edges, setNodes, setEdges, fitView]);
+  }, [project, aiPrompt, nodes, edges, setNodes, setEdges, fitView, showToast]);
 
   const handleGenerateShareLink = useCallback(async () => {
     if (!project || !isOwner) return;
@@ -688,6 +771,66 @@ function CanvasInner() {
                 </button>
               </div>
             </div>
+
+            {/* Members Section */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1 flex items-center gap-2">
+                <Users className="w-3.5 h-3.5" />
+                Members
+              </h3>
+              <div className="space-y-2">
+                {isMembersLoading ? (
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <div className="w-8 h-8 rounded-full bg-mocha-surface0 animate-pulse" />
+                    <div className="flex-1 space-y-1">
+                      <div className="h-3 w-20 bg-mocha-surface0 rounded animate-pulse" />
+                      <div className="h-2 w-16 bg-mocha-surface0 rounded animate-pulse" />
+                    </div>
+                  </div>
+                ) : projectMembers.length === 0 ? (
+                  <p className="text-xs text-mocha-overlay0 px-3 py-2">No members yet</p>
+                ) : (
+                  projectMembers.map((member) => {
+                    const hasAvatar = member.avatar_url && member.avatar_url.trim() !== "";
+                    const memberIsOwner = project && member.id === project.user_id;
+                    return (
+                      <div
+                        key={member.id}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-mocha-surface0/30 transition-colors"
+                      >
+                        <div className="relative">
+                          {hasAvatar ? (
+                            <img
+                              src={member.avatar_url!}
+                              alt={member.name}
+                              className="w-8 h-8 rounded-full object-cover border border-mocha-surface0"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-mocha-surface0 flex items-center justify-center text-xs font-medium text-mocha-text border border-mocha-surface1">
+                              {member.name?.charAt(0).toUpperCase() || "?"}
+                            </div>
+                          )}
+                          {memberIsOwner && (
+                            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-mocha-yellow flex items-center justify-center">
+                              <Crown className="w-2.5 h-2.5 text-mocha-crust" />
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-mocha-text truncate flex-1 min-w-0">
+                          {member.name}
+                          {member.id === user?.id && (
+                            <span className="text-mocha-overlay0 font-normal"> (you)</span>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -717,17 +860,23 @@ function CanvasInner() {
 
           {/* React Flow Canvas */}
           <ReactFlow
-            nodes={nodes}
-            edges={edges}
+            nodes={uniqueNodes}
+            edges={uniqueEdges}
             onNodesChange={(changes: NodeChange[]) => {
               // Apply changes using React Flow's utility
-              const updatedNodes = applyNodeChanges(changes, nodes);
+              const updatedNodes = applyNodeChanges(changes, uniqueNodes);
               setNodes(updatedNodes);
             }}
             onEdgesChange={(changes: EdgeChange[]) => {
               // Apply changes using React Flow's utility
-              const updatedEdges = applyEdgeChanges(changes, edges);
+              const updatedEdges = applyEdgeChanges(changes, uniqueEdges);
               setEdges(updatedEdges);
+            }}
+            onEdgesDelete={(deletedEdges) => {
+              // Delete edges when user removes them
+              deletedEdges.forEach((edge) => {
+                deleteEdge(edge.id);
+              });
             }}
             onConnect={(connection: Connection) => {
               // Only allow connections between column handles, not node-level connections
@@ -749,6 +898,7 @@ function CanvasInner() {
                 targetHandle: connection.targetHandle,
                 type: "smoothstep" as const,
                 animated: true,
+                deletable: true,
                 style: { 
                   stroke: "#b4befe", 
                   strokeWidth: 2, 
@@ -766,6 +916,7 @@ function CanvasInner() {
             defaultEdgeOptions={{
               type: "smoothstep",
               animated: true,
+              deletable: true,
               style: {
                 stroke: "#b4befe",
                 strokeWidth: 2,
@@ -965,6 +1116,28 @@ function CanvasInner() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border transition-all animate-in slide-in-from-bottom-4 ${
+          toast.type === "success" 
+            ? "bg-mocha-green/10 border-mocha-green/30 text-mocha-green" 
+            : "bg-mocha-red/10 border-mocha-red/30 text-mocha-red"
+        }`}>
+          {toast.type === "success" ? (
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          )}
+          <span className="text-sm font-medium">{toast.message}</span>
+          <button
+            onClick={() => setToast(null)}
+            className="p-1 hover:bg-mocha-surface0/50 rounded transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>

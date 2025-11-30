@@ -31,6 +31,7 @@ export interface CanvasState {
   updateColumn: (nodeId: string, columnId: string, updates: Partial<Column>) => void;
   deleteColumn: (nodeId: string, columnId: string) => void;
   deleteTable: (nodeId: string) => void;
+  deleteEdge: (edgeId: string) => void;
   setNodes: (nodes: Node[]) => void;
   setEdges: (edges: Edge[]) => void;
   setSelectedNodeId: (id: string | null) => void;
@@ -143,6 +144,12 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       edges: state.edges.filter(
         (edge) => edge.source !== nodeId && edge.target !== nodeId
       ),
+    }));
+  },
+
+  deleteEdge: (edgeId) => {
+    set((state) => ({
+      edges: state.edges.filter((edge) => edge.id !== edgeId),
     }));
   },
 

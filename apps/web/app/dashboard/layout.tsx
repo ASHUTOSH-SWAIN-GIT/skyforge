@@ -48,17 +48,6 @@ export default function DashboardLayout({
         <div className="max-w-6xl mx-auto h-full px-6 lg:px-8 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-mocha-mauve flex items-center justify-center">
-              <svg 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="3" 
-                className="w-4 h-4 text-mocha-crust"
-              >
-                <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
             <span className="font-bold text-lg tracking-tight text-mocha-text">Skyforge</span>
           </div>
 

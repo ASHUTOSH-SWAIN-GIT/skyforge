@@ -1,62 +1,60 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import { deleteProject as deleteProjectApi, getMyProjects } from "../../lib/projects";
 import { Project } from "../../types";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2 } from "lucide-react";
+import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { ProjectMembers } from "./components/ProjectMembers";
+
+const projectsFetcher = () => getMyProjects();
 
 export default function WorkspacePage() {
   const router = useRouter();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: projects, error: fetchError, isLoading, mutate } = useSWR<Project[]>(
+    "projects",
+    projectsFetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 5000,
+      fallbackData: [],
+    }
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
-  const fetchProjects = async () => {
-    try {
-      setIsLoading(true);
-      const data = await getMyProjects();
-      setProjects(data || []);
-    } catch (error) {
-      console.error("Failed to fetch projects", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  useEffect(() => {
-    const handleWindowClick = () => setMenuProjectId(null);
-    window.addEventListener("click", handleWindowClick);
-    return () => window.removeEventListener("click", handleWindowClick);
-  }, []);
-
-  const handleDeleteProject = async (projectId: string, projectName: string) => {
-    const confirmed = window.confirm(`Delete project \"${projectName}\"? This action cannot be undone.`);
-    if (!confirmed) {
-      return;
-    }
+  const handleDeleteProject = useCallback(async () => {
+    if (!deleteConfirm) return;
+    
+    const { id: projectId } = deleteConfirm;
     setErrorMessage(null);
     setDeletingProjectId(projectId);
+    setDeleteConfirm(null);
+    
     try {
+      // Optimistic update - remove from list immediately
+      mutate(
+        (current) => current?.filter((p) => p.id !== projectId),
+        false
+      );
       await deleteProjectApi(projectId);
       setMenuProjectId(null);
-      await fetchProjects();
+      // Revalidate to ensure consistency
+      mutate();
     } catch (error) {
       console.error("Failed to delete project", error);
-      setErrorMessage(error instanceof Error ? error.message : "Failed to delete project");
+      setErrorMessage(error instanceof Error ? error.message : "Failed to delete project. Please try again.");
+      // Revert optimistic update on error
+      mutate();
     } finally {
       setDeletingProjectId(null);
     }
-  };
+  }, [deleteConfirm, mutate]);
 
 
   return (
@@ -64,19 +62,58 @@ export default function WorkspacePage() {
       <CreateProjectModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        onSuccess={fetchProjects}
+        onSuccess={() => mutate()}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-mocha-surface0 bg-mocha-base p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-mocha-red/10">
+                <Trash2 className="w-5 h-5 text-mocha-red" />
+              </div>
+              <h3 className="text-lg font-semibold text-mocha-text">Delete Project</h3>
+            </div>
+            <p className="text-sm text-mocha-subtext0 mb-6">
+              Are you sure you want to delete <span className="font-medium text-mocha-text">{deleteConfirm.name}</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 rounded-lg text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProject}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-mocha-crust bg-mocha-red hover:bg-mocha-red/90 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-mocha-mauve to-mocha-blue bg-clip-text text-transparent">Workspace</h1>
-        <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
+          <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
         </div>
       </div>
 
-      {errorMessage && (
-        <div className="rounded-xl border border-mocha-red/30 bg-mocha-red/10 text-mocha-red px-4 py-3 text-sm">
-          {errorMessage}
+      {/* Error Message */}
+      {(errorMessage || fetchError) && (
+        <div className="flex items-center gap-3 rounded-xl border border-mocha-red/30 bg-mocha-red/10 text-mocha-red px-4 py-3 text-sm">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <span className="flex-1">{errorMessage || "Failed to load projects. Please try again."}</span>
+          <button
+            onClick={() => mutate()}
+            className="px-3 py-1 rounded-lg bg-mocha-red/20 hover:bg-mocha-red/30 transition-colors text-xs font-medium"
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -97,14 +134,18 @@ export default function WorkspacePage() {
         </button>
 
         {/* Project Cards */}
-        {isLoading ? (
+        {isLoading && (!projects || projects.length === 0) ? (
            // Skeleton Loaders
            [...Array(3)].map((_, i) => (
              <div key={i} className="h-64 rounded-2xl bg-mocha-surface0/50 animate-pulse border border-mocha-surface0" />
            ))
-        ) : projects.length === 0 ? (
-            // Initial Empty State (handled by the create card being the only thing, or we can add a specific empty message if we want, but the grid with just the create button is usually fine)
-            null 
+        ) : !projects || projects.length === 0 ? (
+            // Empty state message
+            <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+              <Database className="w-12 h-12 text-mocha-overlay0 mb-4" />
+              <p className="text-mocha-subtext0 text-lg mb-2">No projects yet</p>
+              <p className="text-mocha-overlay0 text-sm">Create your first project to get started</p>
+            </div>
         ) : (
           projects.map((project) => (
             <div 
@@ -120,7 +161,7 @@ export default function WorkspacePage() {
                 <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-mocha-mauve/20 to-mocha-blue/20 border border-mocha-surface1 flex items-center justify-center text-mocha-mauve group-hover:scale-105 transition-transform duration-300">
                   <Database className="w-6 h-6" />
                 </div>
-                <div className="relative">
+                <div>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -130,28 +171,6 @@ export default function WorkspacePage() {
                   >
                     <MoreVertical className="w-4 h-4" />
                   </button>
-                  {menuProjectId === project.id && (
-                    <div
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute right-0 mt-2 w-44 rounded-xl border border-mocha-surface0 bg-mocha-base/95 shadow-lg z-20"
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProject(project.id, project.name);
-                        }}
-                        disabled={deletingProjectId === project.id}
-                        className="flex w-full items-center gap-2 px-4 py-3 text-sm text-mocha-red hover:bg-mocha-red/10 rounded-xl transition-colors disabled:opacity-60"
-                      >
-                        {deletingProjectId === project.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                        Delete Project
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -178,6 +197,41 @@ export default function WorkspacePage() {
           ))
         )}
       </div>
+
+      {/* Context Menu for Project Actions */}
+      {menuProjectId && (
+        <div 
+          className="fixed inset-0 z-40"
+          onClick={() => setMenuProjectId(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 rounded-xl border border-mocha-surface0 bg-mocha-base shadow-2xl p-2"
+          >
+            <p className="text-xs text-mocha-overlay0 px-3 py-2 border-b border-mocha-surface0 mb-2">
+              Project Actions
+            </p>
+            <button
+              onClick={() => {
+                const project = projects?.find(p => p.id === menuProjectId);
+                if (project) {
+                  setMenuProjectId(null);
+                  setDeleteConfirm({ id: project.id, name: project.name });
+                }
+              }}
+              disabled={deletingProjectId === menuProjectId}
+              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-mocha-red hover:bg-mocha-red/10 rounded-lg transition-colors disabled:opacity-60"
+            >
+              {deletingProjectId === menuProjectId ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Delete Project
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
