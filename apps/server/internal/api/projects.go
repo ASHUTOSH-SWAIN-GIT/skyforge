@@ -270,7 +270,16 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 	w.Write([]byte(sqlScript))
 }
 
-func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Request) {
+type AIGenerateTablesRequest struct {
+	Prompt string `json:"prompt"`
+}
+
+func (h *ProjectHandler) AIGenerateTables(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
 	userID, err := h.authorize(r)
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -278,10 +287,14 @@ func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Requ
 	}
 
 	projectIDStr := r.PathValue("id")
-	projectID, _ := uuid.Parse(projectIDStr)
-
-	project, err := h.getProjectForUser(r.Context(), projectID, userID)
+	projectID, err := uuid.Parse(projectIDStr)
 	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	// Verify user has access to project
+	if _, err := h.getProjectForUser(r.Context(), projectID, userID); err != nil {
 		writeProjectAccessError(w, err)
 		return
 	}
@@ -291,24 +304,26 @@ func (h *ProjectHandler) ExportProjectSQL_AI(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	dataBytes, err := normalizeCanvasJSON(project.Data)
-	if err != nil {
-		http.Error(w, "Failed to parse project data: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if len(dataBytes) == 0 {
-		http.Error(w, "Project has no canvas data", http.StatusBadRequest)
+	var req AIGenerateTablesRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	sqlScript, err := h.AI.GenerateSQLFromGraph(dataBytes)
+	if strings.TrimSpace(req.Prompt) == "" {
+		http.Error(w, "Prompt is required", http.StatusBadRequest)
+		return
+	}
+
+	// Generate tables using AI
+	canvasData, err := h.AI.GenerateTablesFromPrompt(req.Prompt)
 	if err != nil {
 		http.Error(w, "AI Generation failed: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(sqlScript))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(canvasData)
 }
 
 func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {

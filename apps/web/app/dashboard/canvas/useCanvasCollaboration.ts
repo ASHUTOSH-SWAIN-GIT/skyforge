@@ -215,16 +215,22 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       if (event.status === "connected") {
         setStatus("connected");
         isConnectedRef.current = true;
-        // Set awareness after connection
-        setTimeout(() => {
-          setAwarenessState();
-          updatePeers();
-        }, 100);
-        // Force update again after a short delay to ensure sync
+        // Set awareness immediately on connection
+        setAwarenessState();
+        updatePeers();
+        // Quick follow-up updates to ensure sync with other clients
         setTimeout(() => {
           forceUpdateAwareness();
           updatePeers();
-        }, 1000);
+        }, 50);
+        setTimeout(() => {
+          forceUpdateAwareness();
+          updatePeers();
+        }, 200);
+        setTimeout(() => {
+          forceUpdateAwareness();
+          updatePeers();
+        }, 500);
       } else if (event.status === "connecting") {
         setStatus("connecting");
       } else {
@@ -288,7 +294,15 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     // Listen to awareness changes
     const awarenessChangeHandler = ({ added, removed, updated }: { added: number[]; removed: number[]; updated: number[] }) => {
       console.log("[Collaboration] Awareness change - added:", added.length, "removed:", removed.length, "updated:", updated.length);
+      // Immediately update peers on any awareness change
       updatePeers();
+      // When new peers are added, force update our own awareness so they see us
+      if (added.length > 0) {
+        forceUpdateAwareness();
+        // Quick follow-up to ensure bidirectional sync
+        setTimeout(updatePeers, 50);
+        setTimeout(updatePeers, 150);
+      }
     };
     
     awareness.on("change", awarenessChangeHandler);
@@ -298,7 +312,10 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       console.log("[Collaboration] Sync event:", synced);
       if (synced) {
         forceUpdateAwareness();
-        setTimeout(updatePeers, 200);
+        updatePeers();
+        // Follow-up updates to ensure full sync
+        setTimeout(updatePeers, 50);
+        setTimeout(updatePeers, 150);
       }
     };
     provider.on("sync", syncHandler);
@@ -306,16 +323,18 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     // Initial setup
     setAwarenessState();
     
-    // Initial peer update after connection stabilizes
-    setTimeout(updatePeers, 500);
-    setTimeout(updatePeers, 2000);
+    // Aggressive initial peer updates for fast sync
+    setTimeout(updatePeers, 100);
+    setTimeout(updatePeers, 300);
+    setTimeout(updatePeers, 600);
+    setTimeout(updatePeers, 1000);
     
-    // Periodic peer check (less frequent to avoid flickering)
+    // Periodic peer check (every 2 seconds for responsive updates)
     const peerCheckInterval = setInterval(() => {
       if (isConnectedRef.current) {
         updatePeers();
       }
-    }, 5000);
+    }, 2000);
 
     // Subscribe to store changes for syncing
     const unsubscribeStore = useCanvasStore.subscribe((state, previousState) => {

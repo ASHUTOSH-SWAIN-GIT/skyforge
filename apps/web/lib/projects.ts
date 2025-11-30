@@ -31,19 +31,52 @@ export async function exportProjectSQL(projectId: string) {
     return text;
 }
 
-export async function exportProjectSQLAI(projectId: string) {
-    const res = await fetch(`/api/projects/${projectId}/export/ai`, {
-        method: "GET",
+export interface AIGeneratedCanvas {
+    nodes: Array<{
+        id: string;
+        type: string;
+        position: { x: number; y: number };
+        data: {
+            name: string;
+            columns: Array<{
+                id: string;
+                name: string;
+                type: string;
+                isPrimaryKey: boolean;
+                constraints: string[];
+            }>;
+        };
+    }>;
+    edges: Array<{
+        id: string;
+        source: string;
+        target: string;
+        sourceHandle: string;
+        targetHandle: string;
+        type: string;
+        animated: boolean;
+    }>;
+}
+
+export async function aiGenerateTables(projectId: string, prompt: string): Promise<AIGeneratedCanvas> {
+    const res = await fetch(`/api/projects/${projectId}/ai/generate-tables`, {
+        method: "POST",
         credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
     });
-    const text = await res.text();
+
     if (!res.ok) {
         if (res.status === 401) {
             window.location.href = "/login";
         }
-        throw new Error(text || "Failed to export SQL via AI");
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to generate tables with AI");
     }
-    return text;
+
+    return res.json();
 }
 
 export async function updateProject(

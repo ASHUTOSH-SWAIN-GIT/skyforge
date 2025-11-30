@@ -19,11 +19,11 @@ import {
   getProject,
   updateProject,
   exportProjectSQL,
-  exportProjectSQLAI,
   importSQL,
   getProjectShareLink,
   createProjectShareLink,
   joinShareLink,
+  aiGenerateTables,
 } from "../../../../lib/projects";
 import { Project, ShareLinkInfo } from "../../../../types";
 import {
@@ -40,6 +40,9 @@ import {
   Share2,
   Copy,
   Check,
+  Sparkles,
+  X,
+  Loader2,
 } from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
@@ -73,6 +76,10 @@ function CanvasInner() {
   const [shareError, setShareError] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const {
     nodes,
@@ -353,43 +360,67 @@ function CanvasInner() {
     }
   }, [handleImportSQL]);
 
-  const handleExport = useCallback(async (mode: "standard" | "ai") => {
+  const handleExport = useCallback(async () => {
     if (!project) return;
     try {
       setIsExporting(true);
-      setSqlSource(mode);
+      setSqlSource("standard");
       setSqlPreview(null);
-      const sql =
-        mode === "standard"
-          ? await exportProjectSQL(project.id.toString())
-          : await exportProjectSQLAI(project.id.toString());
+      const sql = await exportProjectSQL(project.id.toString());
       setSqlPreview(sql);
     } catch (error) {
       console.error("Failed to export SQL", error);
-      if (mode === "ai") {
-        try {
-          const fallbackSql = await exportProjectSQL(project.id.toString());
-          setSqlSource("standard");
-          setSqlPreview(
-            `-- AI export failed (${error instanceof Error ? error.message : "Unknown error"}). Showing standard SQL instead.\n\n${fallbackSql}`
-          );
-        } catch (fallbackError) {
-          console.error("Fallback SQL export failed", fallbackError);
-          setSqlPreview(
-            `Failed to generate SQL: ${
-              fallbackError instanceof Error ? fallbackError.message : "Unknown error"
-            }`
-          );
-        }
-      } else {
-        setSqlPreview(
-          `Failed to generate SQL: ${error instanceof Error ? error.message : "Unknown error"}`
-        );
-      }
+      setSqlPreview(
+        `Failed to generate SQL: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
       setIsExporting(false);
     }
   }, [project]);
+
+  const handleAIGenerate = useCallback(async () => {
+    if (!project || !aiPrompt.trim()) return;
+    
+    try {
+      setIsAIGenerating(true);
+      setAiError(null);
+      
+      const generatedData = await aiGenerateTables(project.id.toString(), aiPrompt);
+      
+      // Merge generated tables with existing canvas
+      const currentNodes = nodes;
+      const currentEdges = edges;
+      
+      // Offset new nodes based on existing canvas content
+      const maxX = currentNodes.length > 0 
+        ? Math.max(...currentNodes.map(n => n.position?.x || 0)) + 400
+        : 0;
+      
+      const offsetNodes = generatedData.nodes.map((node, index) => ({
+        ...node,
+        position: {
+          x: (node.position?.x || 0) + maxX,
+          y: node.position?.y || index * 200,
+        },
+      }));
+      
+      // Add generated nodes and edges to canvas
+      setNodes([...currentNodes, ...offsetNodes]);
+      setEdges([...currentEdges, ...generatedData.edges]);
+      
+      // Close modal and reset
+      setIsAIChatOpen(false);
+      setAiPrompt("");
+      
+      // Fit view after adding new nodes
+      setTimeout(() => fitView({ padding: 0.2 }), 100);
+    } catch (error) {
+      console.error("Failed to generate tables with AI", error);
+      setAiError(error instanceof Error ? error.message : "Failed to generate tables");
+    } finally {
+      setIsAIGenerating(false);
+    }
+  }, [project, aiPrompt, nodes, edges, setNodes, setEdges, fitView]);
 
   const handleGenerateShareLink = useCallback(async () => {
     if (!project || !isOwner) return;
@@ -517,14 +548,16 @@ function CanvasInner() {
             )}
           </div>
         )}
-        <button
-          onClick={handleOpenShareModal}
-          disabled={!project}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-mocha-text rounded-full border border-mocha-surface0 bg-mocha-mantle/70 hover:bg-mocha-surface0 transition-colors disabled:opacity-50"
-        >
-          <Share2 className="w-4 h-4" />
-          Share
-        </button>
+        {isOwner && (
+          <button
+            onClick={handleOpenShareModal}
+            disabled={!project}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-mocha-text rounded-full border border-mocha-surface0 bg-mocha-mantle/70 hover:bg-mocha-surface0 transition-colors disabled:opacity-50"
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </button>
+        )}
       </div>
 
       {/* Collapsible Sidebar */}
@@ -618,6 +651,18 @@ function CanvasInner() {
               </div>
             </div>
 
+            {/* AI Generate */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1">AI Assistant</h3>
+              <button
+                onClick={() => setIsAIChatOpen(true)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-mocha-text bg-mocha-surface0/30 hover:bg-mocha-surface0/80 rounded-xl transition-all border border-mocha-surface0"
+              >
+                <Sparkles className="w-4 h-4 text-mocha-mauve" />
+                <span>Generate with AI</span>
+              </button>
+            </div>
+
             {/* Actions */}
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1">Export</h3>
@@ -631,29 +676,16 @@ function CanvasInner() {
                   <span>{isSaving ? "Saving..." : "Save Project"}</span>
                 </button>
                 
-                <div className="grid grid-cols-1 gap-3">
-                  <button
-                    onClick={() => handleExport("standard")}
-                    disabled={isExporting}
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Code className="w-4 h-4" />
-                      <span>SQL</span>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => handleExport("ai")}
-                    disabled={isExporting}
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Wand2 className="w-4 h-4 text-mocha-pink" />
-                      <span>AI SQL</span>
-                    </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-mocha-pink/20 text-mocha-pink uppercase">Beta</span>
-                  </button>
-                </div>
+                <button
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
+                >
+                  <div className="flex items-center gap-3">
+                    <Code className="w-4 h-4" />
+                    <span>{isExporting ? "Exporting..." : "Export SQL"}</span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -863,6 +895,74 @@ function CanvasInner() {
                 </div>
               )}
               {shareError && <p className="text-xs text-mocha-red">{shareError}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Chat Modal */}
+      {isAIChatOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-lg bg-mocha-mantle border border-mocha-surface0 rounded-xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-mocha-surface0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-mocha-mauve" />
+                <p className="text-mocha-text font-semibold">Generate Tables with AI</p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsAIChatOpen(false);
+                  setAiPrompt("");
+                  setAiError(null);
+                }}
+                className="p-1.5 rounded hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="p-4 space-y-3">
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="Describe the tables you want to create... e.g., 'Create tables for a blog with users, posts, and comments'"
+                className="w-full h-32 px-3 py-2 rounded-lg bg-mocha-base border border-mocha-surface0 text-mocha-text placeholder:text-mocha-overlay0 focus:outline-none focus:border-mocha-mauve resize-none text-sm"
+                disabled={isAIGenerating}
+              />
+
+              {aiError && (
+                <div className="px-3 py-2 rounded-lg bg-mocha-red/10 border border-mocha-red/20 text-sm text-mocha-red">
+                  {aiError}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setIsAIChatOpen(false);
+                    setAiPrompt("");
+                    setAiError(null);
+                  }}
+                  disabled={isAIGenerating}
+                  className="px-4 py-2 rounded-lg text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAIGenerate}
+                  disabled={isAIGenerating || !aiPrompt.trim()}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAIGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    "Generate"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
