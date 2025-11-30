@@ -24,7 +24,25 @@ export async function api<T>(path: string, options: FetchOptions = {}) {
     if (!res.ok) {
         // Don't redirect here - let the components handle auth errors
         // This prevents infinite redirect loops
-        const error: any = new Error(`API Error: ${res.statusText}`);
+        let errorMessage = res.statusText || "Unknown error";
+        // Try to get error message from response body if available
+        try {
+            const contentType = res.headers.get("content-type");
+            if (contentType && contentType.includes("application/json")) {
+                const errorData = await res.json();
+                if (errorData.error || errorData.message) {
+                    errorMessage = errorData.error || errorData.message;
+                }
+            } else {
+                const text = await res.text();
+                if (text && text.trim()) {
+                    errorMessage = text;
+                }
+            }
+        } catch {
+            // If we can't parse the error, use statusText
+        }
+        const error: any = new Error(errorMessage);
         error.status = res.status;
         throw error;
     }

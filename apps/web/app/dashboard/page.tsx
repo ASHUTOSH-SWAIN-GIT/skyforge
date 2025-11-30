@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { deleteProject as deleteProjectApi, getMyProjects } from "../../lib/projects";
 import { Project } from "../../types";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2, AlertCircle } from "lucide-react";
+import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2, AlertCircle, X } from "lucide-react";
 import { ProjectMembers } from "./components/ProjectMembers";
 
 const projectsFetcher = () => getMyProjects();
@@ -27,12 +27,14 @@ export default function WorkspacePage() {
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleDeleteProject = useCallback(async () => {
     if (!deleteConfirm) return;
     
     const { id: projectId } = deleteConfirm;
     setErrorMessage(null);
+    setDeleteError(null);
     setDeletingProjectId(projectId);
     setDeleteConfirm(null);
     
@@ -46,9 +48,15 @@ export default function WorkspacePage() {
       setMenuProjectId(null);
       // Revalidate to ensure consistency
       mutate();
-    } catch (error) {
-      console.error("Failed to delete project", error);
-      setErrorMessage(error instanceof Error ? error.message : "Failed to delete project. Please try again.");
+    } catch (error: any) {
+      // Check if it's a 403 Forbidden error (collaborator trying to delete)
+      if (error?.status === 403) {
+        setDeleteError("Only project owners can delete projects.");
+        // Don't log expected permission errors to console
+      } else {
+        console.error("Failed to delete project", error);
+        setErrorMessage(error instanceof Error ? error.message : "Failed to delete project. Please try again.");
+      }
       // Revert optimistic update on error
       mutate();
     } finally {
@@ -95,6 +103,31 @@ export default function WorkspacePage() {
           </div>
         </div>
       )}
+
+      {/* Delete Error Dialog */}
+      {deleteError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-xl border border-mocha-red/30 bg-mocha-base p-6 shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-lg bg-mocha-red/10">
+                <AlertCircle className="w-5 h-5 text-mocha-red" />
+              </div>
+              <h3 className="text-lg font-semibold text-mocha-text">Permission Denied</h3>
+            </div>
+            <p className="text-sm text-mocha-subtext0 mb-6">
+              {deleteError}
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setDeleteError(null)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-mocha-crust bg-mocha-red hover:bg-mocha-red/90 transition-colors"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -108,12 +141,22 @@ export default function WorkspacePage() {
         <div className="flex items-center gap-3 rounded-xl border border-mocha-red/30 bg-mocha-red/10 text-mocha-red px-4 py-3 text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span className="flex-1">{errorMessage || "Failed to load projects. Please try again."}</span>
-          <button
-            onClick={() => mutate()}
-            className="px-3 py-1 rounded-lg bg-mocha-red/20 hover:bg-mocha-red/30 transition-colors text-xs font-medium"
-          >
-            Retry
-          </button>
+          {fetchError && (
+            <button
+              onClick={() => mutate()}
+              className="px-3 py-1 rounded-lg bg-mocha-red/20 hover:bg-mocha-red/30 transition-colors text-xs font-medium"
+            >
+              Retry
+            </button>
+          )}
+          {errorMessage && (
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="p-1 hover:bg-mocha-red/20 rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
       )}
 

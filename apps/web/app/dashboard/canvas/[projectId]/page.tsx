@@ -50,6 +50,8 @@ import {
   CheckCircle,
   Users,
   Crown,
+  Menu,
+  Database,
 } from "lucide-react";
 import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
@@ -854,21 +856,19 @@ function CanvasInner() {
         </div>
       </div>
 
-      {/* Toggle Button (when sidebar is closed) */}
-      {!isSidebarOpen && (
-        <button
-          onClick={() => setIsSidebarOpen(true)}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 p-2 bg-mocha-mantle border border-mocha-surface0 rounded-r-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text shadow-lg"
-          title="Open Sidebar"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      )}
-
       {/* Main Canvas Area */}
       <div className="flex-1 relative">
-        {/* Header - Simple Back Button */}
-        <div className="absolute top-4 left-4 z-20">
+        {/* Header - Back Button and Hamburger Menu */}
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
+          {!isSidebarOpen && (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2.5 bg-mocha-mantle/90 backdrop-blur-sm border border-mocha-surface0 rounded-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text shadow-lg"
+              title="Open Sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          )}
           <button
             onClick={() => router.push("/dashboard")}
             className="px-4 py-2 text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-sm"
@@ -985,18 +985,21 @@ function CanvasInner() {
               <button
                 onClick={() => handleExport("sql")}
                 disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-mocha-blue/50 transition-all group"
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#336791]/50 transition-all group"
               >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#336791] to-[#2F5E8A] flex items-center justify-center shadow-lg">
-                  <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#336791] to-[#205080] flex items-center justify-center shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
+                    <ellipse cx="12" cy="6" rx="8" ry="3" stroke="white" strokeWidth="1.5" fill="none"/>
+                    <path d="M4 6v6c0 1.657 3.582 3 8 3s8-1.343 8-3V6" stroke="white" strokeWidth="1.5"/>
+                    <path d="M4 12v6c0 1.657 3.582 3 8 3s8-1.343 8-3v-6" stroke="white" strokeWidth="1.5"/>
+                    <ellipse cx="12" cy="12" rx="8" ry="3" stroke="white" strokeWidth="1.5" fill="none" strokeDasharray="2 2" opacity="0.5"/>
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-semibold text-mocha-text group-hover:text-mocha-blue transition-colors">PostgreSQL</p>
+                  <p className="font-semibold text-mocha-text group-hover:text-[#336791] transition-colors">PostgreSQL</p>
                   <p className="text-xs text-mocha-overlay0">Raw SQL schema with CREATE TABLE statements</p>
                 </div>
-                <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-mocha-blue transition-colors" />
+                <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-[#336791] transition-colors" />
               </button>
 
               {/* Prisma Option */}
