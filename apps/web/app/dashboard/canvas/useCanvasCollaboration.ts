@@ -296,6 +296,15 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       console.log("[Collaboration] Awareness change - added:", added.length, "removed:", removed.length, "updated:", updated.length);
       // Immediately update peers on any awareness change
       updatePeers();
+      
+      // When peers are removed, do an extra immediate update to ensure UI reflects the change
+      if (removed.length > 0) {
+        // Force immediate re-render by updating peers again
+        requestAnimationFrame(() => {
+          updatePeers();
+        });
+      }
+      
       // When new peers are added, force update our own awareness so they see us
       if (added.length > 0) {
         forceUpdateAwareness();
@@ -352,7 +361,43 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       }
     });
 
+    // Clean up awareness when leaving - this notifies other clients immediately
+    const cleanupAwareness = () => {
+      console.log("[Collaboration] Cleaning up awareness state");
+      awareness.setLocalState(null);
+    };
+
+    // Handle tab close / browser close
+    const handleBeforeUnload = () => {
+      cleanupAwareness();
+    };
+
+    // Handle page visibility change (navigating away, switching tabs)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        // User might be leaving, but don't clear awareness yet (they might come back)
+        // Just ensure our state is up to date
+      }
+    };
+
+    // Handle page hide (more reliable for navigation)
+    const handlePageHide = () => {
+      cleanupAwareness();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
+      // Remove event listeners
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      
+      // Clear awareness state before disconnecting - this notifies others immediately
+      cleanupAwareness();
+      
       clearInterval(connectionCheck);
       clearInterval(peerCheckInterval);
       unsubscribeStore();

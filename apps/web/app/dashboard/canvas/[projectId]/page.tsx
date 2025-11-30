@@ -796,7 +796,6 @@ function CanvasInner() {
             {/* Members Section */}
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1 flex items-center gap-2">
-                <Users className="w-3.5 h-3.5" />
                 Members
               </h3>
               <div className="space-y-2">

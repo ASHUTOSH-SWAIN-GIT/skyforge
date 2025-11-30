@@ -2,7 +2,7 @@
 
 import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, Play, Database, Layers, Link as LinkIcon, Github } from 'lucide-react';
+import { ArrowRight, Play, Database, Layers, Github } from 'lucide-react';
 import { useUser } from '../../../hooks/useUser';
 
 export function Hero() {
@@ -127,131 +127,108 @@ export function Hero() {
               </div>
 
               {/* Canvas Content */}
-              <div className="relative h-[400px] sm:h-[500px] bg-mocha-base p-8 overflow-hidden">
+              <div className="relative h-[400px] sm:h-[500px] bg-mocha-base overflow-hidden">
+                {/* Grid Pattern Background */}
+                <div 
+                  className="absolute inset-0 opacity-[0.03]"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(to right, #cdd6f4 1px, transparent 1px),
+                      linear-gradient(to bottom, #cdd6f4 1px, transparent 1px)
+                    `,
+                    backgroundSize: '24px 24px'
+                  }}
+                />
 
-                {/* Table Nodes */}
+                {/* Table: Users - Top Left */}
                 <m.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 0.8 }}
-                  className="absolute left-[10%] top-[15%] w-56 p-4 rounded-xl bg-mocha-mantle/90 border border-mocha-surface0 shadow-xl backdrop-blur-sm hover:border-mocha-blue/50 transition-colors group"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.8 }}
+                  className="absolute left-[5%] sm:left-[8%] top-[12%] w-[180px] sm:w-[200px] rounded-xl bg-mocha-mantle border border-mocha-surface0 shadow-2xl overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 mb-4 text-mocha-blue font-bold text-sm">
-                    <Database className="w-4 h-4" />
-                    users
-                    <span className="ml-auto text-[10px] px-2 py-0.5 bg-mocha-blue/20 text-mocha-blue rounded-full">PK</span>
+                  <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-mocha-surface0 bg-mocha-crust/50">
+                    <div className="flex items-center gap-2 text-mocha-blue font-semibold text-xs sm:text-sm">
+                      <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      users
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-mocha-blue/20 text-mocha-blue rounded-full font-medium">PK</span>
                   </div>
-                  <div className="space-y-2 text-xs text-mocha-subtext0 font-mono">
-                    <div className="flex items-center gap-2 p-2 bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-mauve">id</span>
+                  <div className="p-2 sm:p-3 space-y-1 sm:space-y-1.5 text-[10px] sm:text-xs font-mono">
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-blue/10 rounded-lg border border-mocha-blue/20">
+                      <span className="text-mocha-blue font-medium">id</span>
                       <span className="text-mocha-overlay0">uuid</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-text">email</span>
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg">
+                      <span className="text-mocha-subtext1">email</span>
                       <span className="text-mocha-overlay0">text</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-text">name</span>
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg">
+                      <span className="text-mocha-subtext1">name</span>
                       <span className="text-mocha-overlay0">text</span>
                     </div>
                   </div>
                 </m.div>
 
+                {/* Table: Projects - Top Right */}
                 <m.div
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.6, delay: 1 }}
-                  className="absolute right-[10%] top-[10%] w-56 p-4 rounded-xl bg-mocha-mantle/90 border border-mocha-surface0 shadow-xl backdrop-blur-sm hover:border-mocha-mauve/50 transition-colors group"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 1.0 }}
+                  className="absolute right-[5%] sm:right-[8%] top-[5%] w-[180px] sm:w-[200px] rounded-xl bg-mocha-mantle border border-mocha-surface0 shadow-2xl overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 mb-4 text-mocha-mauve font-bold text-sm">
-                    <Layers className="w-4 h-4" />
-                    projects
-                    <span className="ml-auto text-[10px] px-2 py-0.5 bg-mocha-mauve/20 text-mocha-mauve rounded-full">FK</span>
+                  <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-mocha-surface0 bg-mocha-crust/50">
+                    <div className="flex items-center gap-2 text-mocha-mauve font-semibold text-xs sm:text-sm">
+                      <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      projects
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-mocha-mauve/20 text-mocha-mauve rounded-full font-medium">FK</span>
                   </div>
-                  <div className="space-y-2 text-xs text-mocha-subtext0 font-mono">
-                    <div className="flex items-center gap-2 p-2 bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-mauve">id</span>
+                  <div className="p-2 sm:p-3 space-y-1 sm:space-y-1.5 text-[10px] sm:text-xs font-mono">
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-mauve/10 rounded-lg border border-mocha-mauve/20">
+                      <span className="text-mocha-mauve font-medium">id</span>
                       <span className="text-mocha-overlay0">uuid</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-blue">user_id</span>
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-blue/10 rounded-lg border border-mocha-blue/20">
+                      <span className="text-mocha-blue font-medium">user_id</span>
                       <span className="text-mocha-overlay0">uuid</span>
-                </div>
-                    <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-text">name</span>
+                    </div>
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg">
+                      <span className="text-mocha-subtext1">name</span>
                       <span className="text-mocha-overlay0">text</span>
-                </div>
-              </div>
+                    </div>
+                  </div>
                 </m.div>
 
+                {/* Table: Posts - Bottom Center */}
                 <m.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 1.2 }}
-                  className="absolute left-[35%] bottom-[15%] w-56 p-4 rounded-xl bg-mocha-mantle/90 border border-mocha-surface0 shadow-xl backdrop-blur-sm hover:border-mocha-green/50 transition-colors group"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 1.2 }}
+                  className="absolute left-1/2 -translate-x-1/2 bottom-[8%] sm:bottom-[10%] w-[180px] sm:w-[200px] rounded-xl bg-mocha-mantle border border-mocha-surface0 shadow-2xl overflow-hidden"
                 >
-                  <div className="flex items-center gap-2 mb-4 text-mocha-green font-bold text-sm">
-                    <LinkIcon className="w-4 h-4" />
-                    collaborators
+                  <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-mocha-surface0 bg-mocha-crust/50">
+                    <div className="flex items-center gap-2 text-mocha-green font-semibold text-xs sm:text-sm">
+                      <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      posts
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-mocha-green/20 text-mocha-green rounded-full font-medium">FK</span>
                   </div>
-                  <div className="space-y-2 text-xs text-mocha-subtext0 font-mono">
-                    <div className="flex items-center gap-2 p-2 bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-mauve">project_id</span>
+                  <div className="p-2 sm:p-3 space-y-1 sm:space-y-1.5 text-[10px] sm:text-xs font-mono">
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-green/10 rounded-lg border border-mocha-green/20">
+                      <span className="text-mocha-green font-medium">id</span>
                       <span className="text-mocha-overlay0">uuid</span>
                     </div>
-                    <div className="flex items-center gap-2 p-2 hover:bg-mocha-surface0/30 rounded-lg">
-                      <span className="text-mocha-blue">user_id</span>
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-mauve/10 rounded-lg border border-mocha-mauve/20">
+                      <span className="text-mocha-mauve font-medium">project_id</span>
                       <span className="text-mocha-overlay0">uuid</span>
-                </div>
-                </div>
+                    </div>
+                    <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg">
+                      <span className="text-mocha-subtext1">title</span>
+                      <span className="text-mocha-overlay0">text</span>
+                    </div>
+                  </div>
                 </m.div>
-
-                {/* Connection Lines */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <defs>
-                    <linearGradient id="lineGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#89b4fa" />
-                      <stop offset="100%" stopColor="#cba6f7" />
-                    </linearGradient>
-                    <linearGradient id="lineGradient2" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#cba6f7" />
-                      <stop offset="100%" stopColor="#a6e3a1" />
-                    </linearGradient>
-                  </defs>
-                  {/* Users -> Projects */}
-                  <m.path
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1, delay: 1.4 }}
-                    d="M 320 135 C 420 135 540 110 640 110"
-                    stroke="url(#lineGradient1)"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  {/* Projects -> Collaborators */}
-                  <m.path
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1, delay: 1.6 }}
-                    d="M 640 150 C 600 150 600 320 560 320"
-                    stroke="url(#lineGradient2)"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                  {/* Users -> Collaborators */}
-                  <m.path
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 1, delay: 1.8 }}
-                    d="M 208 195 C 208 295 300 360 336 360"
-                    stroke="url(#lineGradient1)"
-                    strokeWidth="2"
-                    fill="none"
-                    strokeLinecap="round"
-                  />
-                </svg>
               </div>
             </div>
           </m.div>
