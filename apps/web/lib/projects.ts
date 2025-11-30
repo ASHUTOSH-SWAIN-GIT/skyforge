@@ -31,6 +31,21 @@ export async function exportProjectSQL(projectId: string) {
     return text;
 }
 
+export async function exportProjectPrisma(projectId: string) {
+    const res = await fetch(`/api/projects/${projectId}/export/prisma`, {
+        method: "GET",
+        credentials: "include",
+    });
+    const text = await res.text();
+    if (!res.ok) {
+        if (res.status === 401) {
+            window.location.href = "/login";
+        }
+        throw new Error(text || "Failed to export Prisma schema");
+    }
+    return text;
+}
+
 export interface AIGeneratedCanvas {
     nodes: Array<{
         id: string;

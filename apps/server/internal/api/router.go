@@ -51,6 +51,7 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler, hub *C
 	mux.HandleFunc("DELETE /projects/{id}", projectHandler.DeleteProject)
 
 	mux.HandleFunc("GET /projects/{id}/export", projectHandler.ExportProjectSQL)
+	mux.HandleFunc("GET /projects/{id}/export/prisma", projectHandler.ExportProjectPrisma)
 	mux.HandleFunc("POST /projects/{id}/import-sql", projectHandler.ImportSQL)
 	mux.HandleFunc("POST /projects/{id}/ai/generate-tables", projectHandler.AIGenerateTables)
 	mux.HandleFunc("GET /projects/{id}/share-link", projectHandler.GetShareLink)

@@ -19,6 +19,7 @@ import {
   getProject,
   updateProject,
   exportProjectSQL,
+  exportProjectPrisma,
   importSQL,
   getProjectShareLink,
   createProjectShareLink,
@@ -68,8 +69,10 @@ function CanvasInner() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  const [sqlPreview, setSqlPreview] = useState<string | null>(null);
-  const [sqlSource, setSqlSource] = useState<"standard" | "ai">("standard");
+  const [codePreview, setCodePreview] = useState<string | null>(null);
+  const [exportFormat, setExportFormat] = useState<"sql" | "prisma">("sql");
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [codeCopySuccess, setCodeCopySuccess] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -441,22 +444,38 @@ function CanvasInner() {
     }
   }, [handleImportSQL, showToast]);
 
-  const handleExport = useCallback(async () => {
+  const handleExport = useCallback(async (format: "sql" | "prisma") => {
     if (!project) return;
     try {
       setIsExporting(true);
-      setSqlSource("standard");
-      setSqlPreview(null);
-      const sql = await exportProjectSQL(project.id.toString());
-      setSqlPreview(sql);
+      setExportFormat(format);
+      setCodePreview(null);
+      setIsExportModalOpen(false);
+      
+      const code = format === "sql" 
+        ? await exportProjectSQL(project.id.toString())
+        : await exportProjectPrisma(project.id.toString());
+      
+      setCodePreview(code);
     } catch (error) {
-      console.error("Failed to export SQL", error);
-      showToast("Failed to generate SQL. Please try again.", "error");
-      setSqlPreview(null);
+      console.error(`Failed to export ${format}`, error);
+      showToast(`Failed to generate ${format === "sql" ? "SQL" : "Prisma schema"}. Please try again.`, "error");
+      setCodePreview(null);
     } finally {
       setIsExporting(false);
     }
   }, [project, showToast]);
+
+  const handleCopyCode = useCallback(async () => {
+    if (!codePreview) return;
+    try {
+      await navigator.clipboard.writeText(codePreview);
+      setCodeCopySuccess(true);
+      setTimeout(() => setCodeCopySuccess(false), 2000);
+    } catch (error) {
+      showToast("Failed to copy to clipboard", "error");
+    }
+  }, [codePreview, showToast]);
 
   const handleAIGenerate = useCallback(async () => {
     if (!project || !aiPrompt.trim()) return;
@@ -760,13 +779,13 @@ function CanvasInner() {
                 </button>
                 
                 <button
-                  onClick={handleExport}
+                  onClick={() => setIsExportModalOpen(true)}
                   disabled={isExporting}
                   className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
                 >
                   <div className="flex items-center gap-3">
                     <Code className="w-4 h-4" />
-                    <span>{isExporting ? "Exporting..." : "Export SQL"}</span>
+                    <span>{isExporting ? "Exporting..." : "Export Code"}</span>
                   </div>
                 </button>
               </div>
@@ -945,26 +964,104 @@ function CanvasInner() {
         </ReactFlow>
       </div>
 
-      {/* SQL Preview Modal */}
-      {sqlPreview !== null && (
+      {/* Export Options Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
+              <div>
+                <p className="text-mocha-text font-semibold">Export Schema</p>
+                <p className="text-xs text-mocha-overlay0">Choose your preferred format</p>
+              </div>
+              <button
+                onClick={() => setIsExportModalOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6 space-y-3">
+              {/* SQL Option */}
+              <button
+                onClick={() => handleExport("sql")}
+                disabled={isExporting}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-mocha-blue/50 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#336791] to-[#2F5E8A] flex items-center justify-center shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                  </svg>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-mocha-text group-hover:text-mocha-blue transition-colors">PostgreSQL</p>
+                  <p className="text-xs text-mocha-overlay0">Raw SQL schema with CREATE TABLE statements</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-mocha-blue transition-colors" />
+              </button>
+
+              {/* Prisma Option */}
+              <button
+                onClick={() => handleExport("prisma")}
+                disabled={isExporting}
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#2D3748]/50 transition-all group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D3748] to-[#1A202C] flex items-center justify-center shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
+                    <path d="M21.807 18.285L13.553.756a1.324 1.324 0 00-1.129-.754 1.31 1.31 0 00-1.206.626L.258 17.617a1.33 1.33 0 00.076 1.484l5.55 6.446a1.33 1.33 0 001.011.449h12.762a1.33 1.33 0 001.213-.788l1.015-2.422a1.33 1.33 0 00-.078-1.501z" fill="#5A67D8"/>
+                    <path d="M21.807 18.285L13.553.756a1.324 1.324 0 00-1.129-.754L5.885 19.562l5.55 6.446a1.33 1.33 0 001.011.449h7.211a1.33 1.33 0 001.213-.788l1.015-2.422a1.33 1.33 0 00-.078-1.501z" fill="#4C51BF"/>
+                  </svg>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-semibold text-mocha-text group-hover:text-[#5A67D8] transition-colors">Prisma</p>
+                  <p className="text-xs text-mocha-overlay0">schema.prisma with models and relations</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-[#5A67D8] transition-colors" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Code Preview Modal */}
+      {codePreview !== null && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
           <div className="w-full max-w-3xl bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
               <div>
-                <p className="text-sm uppercase tracking-wider text-mocha-subtext0">SQL Preview</p>
+                <p className="text-sm uppercase tracking-wider text-mocha-subtext0">
+                  {exportFormat === "sql" ? "SQL Export" : "Prisma Export"}
+                </p>
                 <p className="text-mocha-text font-semibold">
-                  {sqlSource === "ai" ? "AI Generated SQL" : "Schema SQL"}
+                  {exportFormat === "sql" ? "PostgreSQL Schema" : "schema.prisma"}
                 </p>
               </div>
-              <button
-                onClick={() => setSqlPreview(null)}
-                className="px-3 py-1.5 text-sm rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopyCode}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
+                >
+                  {codeCopySuccess ? (
+                    <>
+                      <Check className="w-4 h-4 text-mocha-green" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copy
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setCodePreview(null)}
+                  className="p-1.5 rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
             <div className="p-6 max-h-[70vh] overflow-auto font-mono text-sm text-mocha-subtext1 whitespace-pre-wrap bg-mocha-base/60">
-              {sqlPreview}
+              {codePreview}
             </div>
           </div>
         </div>

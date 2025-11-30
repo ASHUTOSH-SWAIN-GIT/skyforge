@@ -270,6 +270,42 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 	w.Write([]byte(sqlScript))
 }
 
+func (h *ProjectHandler) ExportProjectPrisma(w http.ResponseWriter, r *http.Request) {
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, _ := uuid.Parse(projectIDStr)
+
+	project, err := h.getProjectForUser(r.Context(), projectID, userID)
+	if err != nil {
+		writeProjectAccessError(w, err)
+		return
+	}
+
+	dataBytes, err := normalizeCanvasJSON(project.Data)
+	if err != nil {
+		http.Error(w, "Failed to parse project data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(dataBytes) == 0 {
+		http.Error(w, "Project has no canvas data", http.StatusBadRequest)
+		return
+	}
+
+	prismaSchema, err := compiler.GeneratePrisma(dataBytes)
+	if err != nil {
+		http.Error(w, "Failed to generate Prisma schema: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(prismaSchema))
+}
+
 type AIGenerateTablesRequest struct {
 	Prompt string `json:"prompt"`
 }
