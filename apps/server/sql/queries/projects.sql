@@ -52,3 +52,14 @@ INSERT INTO project_collaborators (project_id, user_id, role)
 VALUES ($1, $2, $3)
 ON CONFLICT (project_id, user_id) DO UPDATE
 SET role = EXCLUDED.role;
+
+-- name: GetProjectCollaborators :many
+SELECT u.id, u.email, u.name, u.avatar_url, u.provider, 'owner' as role, p.created_at
+FROM projects p
+JOIN users u ON p.user_id = u.id
+WHERE p.id = $1
+UNION ALL
+SELECT u.id, u.email, u.name, u.avatar_url, u.provider, pc.role, pc.created_at
+FROM project_collaborators pc
+JOIN users u ON pc.user_id = u.id
+WHERE pc.project_id = $1;

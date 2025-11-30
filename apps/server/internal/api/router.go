@@ -56,6 +56,7 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler, hub *C
 	mux.HandleFunc("GET /projects/{id}/share-link", projectHandler.GetShareLink)
 	mux.HandleFunc("POST /projects/{id}/share-link", projectHandler.CreateShareLink)
 	mux.HandleFunc("POST /projects/share-links/{token}/join", projectHandler.JoinShareLink)
+	mux.HandleFunc("GET /projects/{id}/collaborators", projectHandler.GetProjectCollaborators)
 
 	// WebSocket Routes for Collaboration
 	mux.HandleFunc("/ws/collaboration/", hub.HandleWebSocket)

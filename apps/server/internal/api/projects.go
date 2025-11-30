@@ -548,6 +548,70 @@ func (h *ProjectHandler) JoinShareLink(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+type ProjectCollaboratorResponse struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	AvatarUrl *string   `json:"avatar_url"`
+	Provider  string    `json:"provider"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (h *ProjectHandler) GetProjectCollaborators(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	userID, err := h.authorize(r)
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	projectIDStr := r.PathValue("id")
+	projectID, err := uuid.Parse(projectIDStr)
+	if err != nil {
+		http.Error(w, "Invalid project ID", http.StatusBadRequest)
+		return
+	}
+
+	// Verify user has access to this project
+	_, err = h.getProjectForUser(r.Context(), projectID, userID)
+	if err != nil {
+		writeProjectAccessError(w, err)
+		return
+	}
+
+	// Get all collaborators using sqlc generated query
+	collabRows, err := h.DB.GetProjectCollaborators(r.Context(), projectID)
+	if err != nil {
+		http.Error(w, "Failed to fetch collaborators", http.StatusInternalServerError)
+		return
+	}
+
+	collaborators := make([]ProjectCollaboratorResponse, 0, len(collabRows))
+	for _, row := range collabRows {
+		var avatarUrl *string
+		if row.AvatarUrl.Valid {
+			avatarUrl = &row.AvatarUrl.String
+		}
+		collaborators = append(collaborators, ProjectCollaboratorResponse{
+			ID:        row.ID.String(),
+			Email:     row.Email,
+			Name:      row.Name,
+			AvatarUrl: avatarUrl,
+			Provider:  row.Provider,
+			Role:      row.Role,
+			CreatedAt: row.CreatedAt,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(collaborators)
+}
+
 func (h *ProjectHandler) authorize(r *http.Request) (uuid.UUID, error) {
 	cookie, err := r.Cookie("auth_token")
 	if err != nil {

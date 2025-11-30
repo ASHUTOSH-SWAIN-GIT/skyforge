@@ -6,6 +6,7 @@ import { deleteProject as deleteProjectApi, getMyProjects } from "../../lib/proj
 import { Project } from "../../types";
 import CreateProjectModal from "../components/CreateProjectModal";
 import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2 } from "lucide-react";
+import { ProjectMembers } from "./components/ProjectMembers";
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -57,54 +58,6 @@ export default function WorkspacePage() {
     }
   };
 
-  const getTableCount = (data: any) => {
-    if (!data) return 0;
-    try {
-      let parsed = data;
-      
-      // Helper to parse if string
-      const tryParse = (val: any) => {
-        if (typeof val === 'string') {
-          try { return JSON.parse(val); } catch { return val; }
-        }
-        return val;
-      };
-
-      parsed = tryParse(parsed);
-      parsed = tryParse(parsed); // Handle double encoding
-
-      // If it's null/undefined after parsing
-      if (!parsed) return 0;
-
-      // Case 1: Array of nodes directly
-      if (Array.isArray(parsed)) {
-        return parsed.filter((n: any) => n.type === 'table' || n.type === 'tableNode').length;
-      }
-
-      // Case 2: Object with nodes array
-      if (parsed.nodes && Array.isArray(parsed.nodes)) {
-        return parsed.nodes.filter((n: any) => n.type === 'table' || n.type === 'tableNode').length;
-      }
-
-      // Case 3: Object with tables array
-      if (parsed.tables && Array.isArray(parsed.tables)) {
-        return parsed.tables.length;
-      }
-
-      // Case 4: Check if nodes is a string that needs parsing
-      if (parsed.nodes && typeof parsed.nodes === 'string') {
-         const nodes = tryParse(parsed.nodes);
-         if (Array.isArray(nodes)) {
-            return nodes.filter((n: any) => n.type === 'table' || n.type === 'tableNode').length;
-         }
-      }
-
-      return 0;
-    } catch (e) {
-      console.error("Error counting tables:", e);
-      return 0;
-    }
-  };
 
   return (
     <div className="space-y-8 text-mocha-text">
@@ -214,12 +167,9 @@ export default function WorkspacePage() {
 
               {/* Footer */}
               <div className="relative z-10 mt-6 pt-4 border-t border-mocha-surface0 flex items-center justify-between text-xs text-mocha-subtext0">
-                <div className="flex items-center gap-4">
-                  <span className="flex items-center gap-1.5">
-                    <Database className="w-3.5 h-3.5" />
-                    {getTableCount(project.data)} Tables
-                  </span>
-            </div>
+                <div className="flex items-center gap-2">
+                  <ProjectMembers projectId={project.id} maxDisplay={3} />
+                </div>
                 <div className="w-8 h-8 rounded-full bg-mocha-surface0 flex items-center justify-center text-mocha-text opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
                   <ArrowRight className="w-4 h-4" />
           </div>

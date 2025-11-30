@@ -139,3 +139,17 @@ export async function joinShareLink(token: string): Promise<JoinShareLinkInfo> {
     return mapJoinShareLink(response);
 }
 
+export interface ProjectCollaborator {
+    id: string;
+    email: string;
+    name: string;
+    avatar_url: string | null;
+    provider: string;
+    role: string;
+    created_at: string;
+}
+
+export async function getProjectCollaborators(projectId: string): Promise<ProjectCollaborator[]> {
+    return api<ProjectCollaborator[]>(`/projects/${projectId}/collaborators`);
+}
+

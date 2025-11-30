@@ -125,6 +125,59 @@ func (q *Queries) GetProjectCollaborator(ctx context.Context, arg GetProjectColl
 	return i, err
 }
 
+const getProjectCollaborators = `-- name: GetProjectCollaborators :many
+SELECT u.id, u.email, u.name, u.avatar_url, u.provider, 'owner' as role, p.created_at
+FROM projects p
+JOIN users u ON p.user_id = u.id
+WHERE p.id = $1
+UNION ALL
+SELECT u.id, u.email, u.name, u.avatar_url, u.provider, pc.role, pc.created_at
+FROM project_collaborators pc
+JOIN users u ON pc.user_id = u.id
+WHERE pc.project_id = $1
+`
+
+type GetProjectCollaboratorsRow struct {
+	ID        uuid.UUID      `json:"id"`
+	Email     string         `json:"email"`
+	Name      string         `json:"name"`
+	AvatarUrl sql.NullString `json:"avatar_url"`
+	Provider  string         `json:"provider"`
+	Role      string         `json:"role"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+func (q *Queries) GetProjectCollaborators(ctx context.Context, id uuid.UUID) ([]GetProjectCollaboratorsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getProjectCollaborators, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetProjectCollaboratorsRow
+	for rows.Next() {
+		var i GetProjectCollaboratorsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Name,
+			&i.AvatarUrl,
+			&i.Provider,
+			&i.Role,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProjectsByUser = `-- name: GetProjectsByUser :many
 SELECT p.id, p.name, p.description, p.is_public, p.last_saved_at, p.created_at, 'owner' as role
 FROM projects p
