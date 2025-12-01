@@ -11,8 +11,16 @@ import (
 )
 
 func NewGoogleConfig() *oauth2.Config {
+	// Base URL where this backend is publicly reachable.
+	// In production (Render), set BACKEND_PUBLIC_URL, e.g. https://skyforgee-iawn.onrender.com
+	// For local development it falls back to http://localhost:8080
+	baseURL := os.Getenv("BACKEND_PUBLIC_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8080"
+	}
+
 	return &oauth2.Config{
-		RedirectURL:  "http://localhost:8080/auth/google/callback",
+		RedirectURL:  baseURL + "/auth/google/callback",
 		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		Scopes: []string{
