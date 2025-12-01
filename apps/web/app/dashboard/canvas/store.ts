@@ -112,7 +112,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
               ...node,
               data: {
                 ...node.data,
-                columns: node.data.columns.map((col) =>
+                columns: node.data.columns.map((col: Column) =>
                   col.id === columnId ? { ...col, ...updates } : col
                 ),
               },
@@ -130,7 +130,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
               ...node,
               data: {
                 ...node.data,
-                columns: node.data.columns.filter((col) => col.id !== columnId),
+                columns: node.data.columns.filter((col: Column) => col.id !== columnId),
               },
             }
           : node

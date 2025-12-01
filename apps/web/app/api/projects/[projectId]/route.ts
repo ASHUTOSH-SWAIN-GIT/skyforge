@@ -48,16 +48,19 @@ async function forwardRequest(
   return nextResponse;
 }
 
-export async function GET(request: NextRequest, context: { params: { projectId: string } }) {
-  return forwardRequest(request, context.params, "GET");
+export async function GET(request: NextRequest, context: { params: Promise<{ projectId: string }> }) {
+  const params = await context.params;
+  return forwardRequest(request, params, "GET");
 }
 
-export async function PUT(request: NextRequest, context: { params: { projectId: string } }) {
-  return forwardRequest(request, context.params, "PUT");
+export async function PUT(request: NextRequest, context: { params: Promise<{ projectId: string }> }) {
+  const params = await context.params;
+  return forwardRequest(request, params, "PUT");
 }
 
-export async function DELETE(request: NextRequest, context: { params: { projectId: string } }) {
-  return forwardRequest(request, context.params, "DELETE");
+export async function DELETE(request: NextRequest, context: { params: Promise<{ projectId: string }> }) {
+  const params = await context.params;
+  return forwardRequest(request, params, "DELETE");
 }
 
 

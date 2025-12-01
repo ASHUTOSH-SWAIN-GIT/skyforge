@@ -4,9 +4,9 @@ const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL ?? "http://localhost:8080"
 
 export async function POST(
   request: NextRequest,
-  context: { params: { projectId: string } }
+  context: { params: Promise<{ projectId: string }> }
 ) {
-  const { projectId } = context.params;
+  const { projectId } = await context.params;
   const targetUrl = `${BACKEND_BASE_URL}/projects/${projectId}/ai/generate-tables`;
 
   const headers: Record<string, string> = {};
