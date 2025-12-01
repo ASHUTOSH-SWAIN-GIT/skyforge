@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
@@ -104,7 +105,13 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		Secure:   false, //set true in prod
 	})
 
-	http.Redirect(w, r, "http://localhost:3000/dashboard", http.StatusSeeOther)
+	// Redirect back to frontend dashboard
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		// Fallback for local development
+		frontendURL = "http://localhost:3000"
+	}
+	http.Redirect(w, r, frontendURL+"/dashboard", http.StatusSeeOther)
 }
 
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
