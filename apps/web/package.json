@@ -3,11 +3,6 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "pnpm": {
-    "overrides": {
-      "yjs": "^13.6.27"
-    }
-  },
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
