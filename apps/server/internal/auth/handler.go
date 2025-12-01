@@ -94,6 +94,18 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
 	}
+
+	// Configure cookie attributes (different for local vs production)
+	sameSite := http.SameSiteLaxMode
+	secure := false
+	if os.Getenv("ENV") == "production" {
+		// In production we're on a different domain than the frontend,
+		// so we need SameSite=None and Secure=true for the browser to
+		// send the cookie on cross-site XHR/fetch requests.
+		sameSite = http.SameSiteNoneMode
+		secure = true
+	}
+
 	// set the token in the cookies
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
@@ -101,8 +113,8 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(7 * 24 * time.Hour),
 		HttpOnly: true,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
-		Secure:   false, //set true in prod
+		SameSite: sameSite,
+		Secure:   secure,
 	})
 
 	// Redirect back to frontend dashboard
