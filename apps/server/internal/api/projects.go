@@ -3,9 +3,12 @@ package api
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -13,22 +16,36 @@ import (
 
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/ai"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/auth"
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/cache"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/compiler"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
 	"github.com/google/uuid"
 )
 
 type ProjectHandler struct {
-	DB *database.Queries
-	AI *ai.AIService
+	DB    *database.Queries
+	AI    *ai.AIService
+	Cache *cache.Cache
 }
 
 func NewProjectHandler(db *database.Queries) *ProjectHandler {
 	aiService, _ := ai.NewAIService()
 	return &ProjectHandler{
-		DB: db,
-		AI: aiService,
+		DB:    db,
+		AI:    aiService,
+		Cache: cache.GetGlobal(),
 	}
+}
+
+// generateCacheKey creates a hash-based cache key for export data
+func generateCacheKey(projectID uuid.UUID, format string, dataHash string) string {
+	return fmt.Sprintf("export:%s:%s:%s", projectID.String(), format, dataHash)
+}
+
+// hashCanvasData generates a SHA256 hash of the canvas data
+func hashCanvasData(data []byte) string {
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])
 }
 
 type CreateProjectRequest struct {
@@ -199,6 +216,9 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Invalidate export cache for this project
+	h.Cache.DeletePrefix(fmt.Sprintf("export:%s:", projectID.String()))
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(project)
 }
@@ -265,7 +285,21 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	// Use AI for SQL generation if available, fallback to deterministic
+	// Generate cache key based on project ID, format, and data hash
+	dataHash := hashCanvasData(dataBytes)
+	cacheKey := generateCacheKey(projectID, "sql", dataHash)
+
+	// Check cache first
+	if cached, found := h.Cache.Get(cacheKey); found {
+		if sqlScript, ok := cached.(string); ok {
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("X-Cache", "HIT")
+			w.Write([]byte(sqlScript))
+			return
+		}
+	}
+
+	// Generate SQL (use AI if available, fallback to deterministic)
 	var sqlScript string
 	if h.AI != nil {
 		sqlScript, err = h.AI.GenerateSQLFromCanvas(dataBytes)
@@ -285,7 +319,11 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 		}
 	}
 
+	// Cache the result for 24 hours
+	h.Cache.Set(cacheKey, sqlScript, 24*time.Hour)
+
 	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("X-Cache", "MISS")
 	w.Write([]byte(sqlScript))
 }
 
@@ -315,7 +353,21 @@ func (h *ProjectHandler) ExportProjectPrisma(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	// Use AI for Prisma generation if available, fallback to deterministic
+	// Generate cache key based on project ID, format, and data hash
+	dataHash := hashCanvasData(dataBytes)
+	cacheKey := generateCacheKey(projectID, "prisma", dataHash)
+
+	// Check cache first
+	if cached, found := h.Cache.Get(cacheKey); found {
+		if prismaSchema, ok := cached.(string); ok {
+			w.Header().Set("Content-Type", "text/plain")
+			w.Header().Set("X-Cache", "HIT")
+			w.Write([]byte(prismaSchema))
+			return
+		}
+	}
+
+	// Generate Prisma schema (use AI if available, fallback to deterministic)
 	var prismaSchema string
 	if h.AI != nil {
 		prismaSchema, err = h.AI.GeneratePrismaFromCanvas(dataBytes)
@@ -335,7 +387,11 @@ func (h *ProjectHandler) ExportProjectPrisma(w http.ResponseWriter, r *http.Requ
 		}
 	}
 
+	// Cache the result for 24 hours
+	h.Cache.Set(cacheKey, prismaSchema, 24*time.Hour)
+
 	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("X-Cache", "MISS")
 	w.Write([]byte(prismaSchema))
 }
 
@@ -455,6 +511,9 @@ func (h *ProjectHandler) ImportSQL(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to update project", http.StatusInternalServerError)
 		return
 	}
+
+	// Invalidate export cache for this project
+	h.Cache.DeletePrefix(fmt.Sprintf("export:%s:", projectID.String()))
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updatedProject)

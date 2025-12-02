@@ -770,11 +770,15 @@ function CanvasInner() {
                   <button
                   onClick={() => setIsExportModalOpen(true)}
                     disabled={isExporting}
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="flex items-center gap-3">
-                      <Code className="w-4 h-4" />
-                    <span>{isExporting ? "Exporting..." : "Export Code"}</span>
+                      {isExporting ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-mocha-mauve" />
+                      ) : (
+                        <Code className="w-4 h-4" />
+                      )}
+                    <span>{isExporting ? "Generating..." : "Export Code"}</span>
                     </div>
                   </button>
               </div>
@@ -964,7 +968,7 @@ function CanvasInner() {
               <button
                 onClick={() => handleExport("sql")}
                 disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#336791]/50 transition-all group disabled:opacity-50"
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#336791]/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#336791] to-[#205080] flex items-center justify-center shadow-lg">
                   <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
@@ -985,7 +989,7 @@ function CanvasInner() {
               <button
                 onClick={() => handleExport("prisma")}
                 disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#2D3748]/50 transition-all group disabled:opacity-50"
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#2D3748]/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D3748] to-[#1A202C] flex items-center justify-center shadow-lg">
                   <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
@@ -1009,8 +1013,36 @@ function CanvasInner() {
         </div>
       )}
 
+      {/* Export Loading Modal */}
+      {isExporting && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-8 flex flex-col items-center justify-center gap-6">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full border-4 border-mocha-surface0 flex items-center justify-center">
+                  <Loader2 className="w-10 h-10 text-mocha-mauve animate-spin" />
+                </div>
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-mocha-mauve animate-spin" style={{ animationDuration: "1s" }} />
+              </div>
+              <div className="text-center space-y-2">
+                <h3 className="text-lg font-semibold text-mocha-text">
+                  Generating {exportFormat === "sql" ? "PostgreSQL" : "Prisma"} Schema
+                </h3>
+                <p className="text-sm text-mocha-subtext0">
+                  AI is analyzing your schema and generating optimized code...
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-mocha-overlay0">
+                <Sparkles className="w-3 h-3 text-mocha-mauve animate-pulse" />
+                <span>Powered by AI</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Code Preview Modal */}
-      {codePreview !== null && (
+      {codePreview !== null && !isExporting && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
           <div className="w-full max-w-3xl bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
