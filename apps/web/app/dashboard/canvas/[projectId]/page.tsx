@@ -943,7 +943,13 @@ function CanvasInner() {
           <div className="w-full max-w-md bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
               <div>
-                <p className="text-mocha-text font-semibold">Export Schema</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-mocha-text font-semibold">Export Schema</p>
+                  <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-medium bg-mocha-mauve/10 text-mocha-mauve rounded-full border border-mocha-mauve/20">
+                    <Sparkles className="w-3 h-3" />
+                    AI-Powered
+                  </span>
+                </div>
                 <p className="text-xs text-mocha-overlay0">Choose your preferred format</p>
               </div>
               <button
@@ -958,7 +964,7 @@ function CanvasInner() {
               <button
                 onClick={() => handleExport("sql")}
                 disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#336791]/50 transition-all group"
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#336791]/50 transition-all group disabled:opacity-50"
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#336791] to-[#205080] flex items-center justify-center shadow-lg">
                   <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
@@ -970,7 +976,7 @@ function CanvasInner() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-mocha-text group-hover:text-[#336791] transition-colors">PostgreSQL</p>
-                  <p className="text-xs text-mocha-overlay0">Raw SQL schema with CREATE TABLE statements</p>
+                  <p className="text-xs text-mocha-overlay0">Production-ready SQL with proper constraints & indexes</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-[#336791] transition-colors" />
               </button>
@@ -979,7 +985,7 @@ function CanvasInner() {
               <button
                 onClick={() => handleExport("prisma")}
                 disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#2D3748]/50 transition-all group"
+                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#2D3748]/50 transition-all group disabled:opacity-50"
               >
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D3748] to-[#1A202C] flex items-center justify-center shadow-lg">
                   <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
@@ -989,10 +995,15 @@ function CanvasInner() {
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-semibold text-mocha-text group-hover:text-[#5A67D8] transition-colors">Prisma</p>
-                  <p className="text-xs text-mocha-overlay0">schema.prisma with models and relations</p>
+                  <p className="text-xs text-mocha-overlay0">Complete schema.prisma with relations & attributes</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-[#5A67D8] transition-colors" />
               </button>
+            </div>
+            <div className="px-6 pb-4">
+              <p className="text-[10px] text-mocha-overlay0 text-center">
+                AI generates optimized, production-ready code based on your schema
+              </p>
             </div>
           </div>
         </div>
@@ -1004,9 +1015,15 @@ function CanvasInner() {
           <div className="w-full max-w-3xl bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
               <div>
-                <p className="text-sm uppercase tracking-wider text-mocha-subtext0">
-                  {exportFormat === "sql" ? "SQL Export" : "Prisma Export"}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm uppercase tracking-wider text-mocha-subtext0">
+                    {exportFormat === "sql" ? "SQL Export" : "Prisma Export"}
+                  </p>
+                  <span className="flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-medium bg-mocha-mauve/10 text-mocha-mauve rounded border border-mocha-mauve/20">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    AI
+                  </span>
+                </div>
                 <p className="text-mocha-text font-semibold">
                   {exportFormat === "sql" ? "PostgreSQL Schema" : "schema.prisma"}
                 </p>

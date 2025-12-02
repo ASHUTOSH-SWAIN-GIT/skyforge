@@ -265,10 +265,24 @@ func (h *ProjectHandler) ExportProjectSQL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	sqlScript, err := compiler.GenerateSQL(dataBytes)
-	if err != nil {
-		http.Error(w, "Failed to generate SQL: "+err.Error(), http.StatusInternalServerError)
-		return
+	// Use AI for SQL generation if available, fallback to deterministic
+	var sqlScript string
+	if h.AI != nil {
+		sqlScript, err = h.AI.GenerateSQLFromCanvas(dataBytes)
+		if err != nil {
+			// Fallback to deterministic generation on AI failure
+			sqlScript, err = compiler.GenerateSQL(dataBytes)
+			if err != nil {
+				http.Error(w, "Failed to generate SQL: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		sqlScript, err = compiler.GenerateSQL(dataBytes)
+		if err != nil {
+			http.Error(w, "Failed to generate SQL: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
@@ -301,10 +315,24 @@ func (h *ProjectHandler) ExportProjectPrisma(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	prismaSchema, err := compiler.GeneratePrisma(dataBytes)
-	if err != nil {
-		http.Error(w, "Failed to generate Prisma schema: "+err.Error(), http.StatusInternalServerError)
-		return
+	// Use AI for Prisma generation if available, fallback to deterministic
+	var prismaSchema string
+	if h.AI != nil {
+		prismaSchema, err = h.AI.GeneratePrismaFromCanvas(dataBytes)
+		if err != nil {
+			// Fallback to deterministic generation on AI failure
+			prismaSchema, err = compiler.GeneratePrisma(dataBytes)
+			if err != nil {
+				http.Error(w, "Failed to generate Prisma schema: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+	} else {
+		prismaSchema, err = compiler.GeneratePrisma(dataBytes)
+		if err != nil {
+			http.Error(w, "Failed to generate Prisma schema: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "text/plain")
