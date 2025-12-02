@@ -54,7 +54,7 @@ export default function WorkspacePage() {
         setDeleteError("Only project owners can delete projects.");
         // Don't log expected permission errors to console
       } else {
-        console.error("Failed to delete project", error);
+      console.error("Failed to delete project", error);
         setErrorMessage(error instanceof Error ? error.message : "Failed to delete project. Please try again.");
       }
       // Revert optimistic update on error
@@ -132,7 +132,7 @@ export default function WorkspacePage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2 bg-gradient-to-r from-mocha-mauve to-mocha-blue bg-clip-text text-transparent">Workspace</h1>
-          <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
+        <p className="text-mocha-subtext0 text-lg">Manage your database projects and schemas.</p>
         </div>
       </div>
 
@@ -149,7 +149,7 @@ export default function WorkspacePage() {
               Retry
             </button>
           )}
-          {errorMessage && (
+      {errorMessage && (
             <button
               onClick={() => setErrorMessage(null)}
               className="p-1 hover:bg-mocha-red/20 rounded transition-colors"

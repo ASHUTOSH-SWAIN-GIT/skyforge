@@ -19,9 +19,9 @@ async function forwardRequest(
     headers["cookie"] = cookieString;
   } else {
     // Fallback to raw header if Next.js cookies aren't available
-    const cookie = request.headers.get("cookie");
-    if (cookie) {
-      headers["cookie"] = cookie;
+  const cookie = request.headers.get("cookie");
+  if (cookie) {
+    headers["cookie"] = cookie;
     }
   }
 

@@ -45,7 +45,7 @@ export function Navbar() {
             <span className="text-xl font-bold text-mocha-text tracking-tight">
               Skyforge
             </span>
-          </Link>
+            </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">

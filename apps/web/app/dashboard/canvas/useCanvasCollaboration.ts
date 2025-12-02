@@ -34,13 +34,26 @@ const getWebSocketBaseUrl = (): string => {
       return wsUrl.replace(/\/$/, "") + "/ws/collaboration";
     }
     
+    // Check for backend URL environment variable
+    const backendUrl = process.env.NEXT_PUBLIC_SERVER_URL;
+    if (backendUrl) {
+      // Convert http(s) to ws(s)
+      const wsBackendUrl = backendUrl.replace(/^http/, "ws").replace(/\/$/, "");
+      return wsBackendUrl + "/ws/collaboration";
+    }
+    
     // Derive WebSocket URL from current location
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.hostname;
     // For development (localhost), always use port 8080 for backend
     const isDev = host === "localhost" || host === "127.0.0.1";
-    const wsPort = isDev ? ":8080" : (window.location.port ? `:${window.location.port}` : "");
-    return `${protocol}//${host}${wsPort}/ws/collaboration`;
+    if (isDev) {
+      return `ws://${host}:8080/ws/collaboration`;
+    }
+    // In production, use the same host but with wss
+    // Note: This assumes the backend is on the same domain, which might not be the case
+    // If backend is on a different domain, NEXT_PUBLIC_WS_URL must be set
+    return `${protocol}//${host}/ws/collaboration`;
   }
   return "ws://localhost:8080/ws/collaboration";
 };
@@ -109,6 +122,10 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
     
     const provider = new WebsocketProvider(wsBaseUrl, roomName, doc, {
       connect: true,
+      // Reduce reconnect timeout for faster recovery
+      maxBackoffTime: 2500,
+      // Disable broadcast channel for more predictable behavior
+      disableBc: false,
     });
     const awareness = provider.awareness;
 
@@ -345,20 +362,46 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       }
     }, 2000);
 
-    // Subscribe to store changes for syncing
-    const unsubscribeStore = useCanvasStore.subscribe((state, previousState) => {
-      if (state.nodes !== previousState?.nodes && !applyingNodes.current) {
+    // Debounce timer for batching rapid changes
+    let syncTimeout: NodeJS.Timeout | null = null;
+    let pendingNodesSync = false;
+    let pendingEdgesSync = false;
+    
+    const flushSync = () => {
+      const state = useCanvasStore.getState();
+      
+      if (pendingNodesSync && !applyingNodes.current) {
         doc.transact(() => {
           nodesArray.delete(0, nodesArray.length);
           nodesArray.push(deepClone(state.nodes));
         });
+        pendingNodesSync = false;
       }
-      if (state.edges !== previousState?.edges && !applyingEdges.current) {
+      
+      if (pendingEdgesSync && !applyingEdges.current) {
         doc.transact(() => {
           edgesArray.delete(0, edgesArray.length);
           edgesArray.push(deepClone(state.edges));
         });
+        pendingEdgesSync = false;
       }
+    };
+    
+    // Subscribe to store changes for syncing with minimal debounce
+    const unsubscribeStore = useCanvasStore.subscribe((state, previousState) => {
+      if (state.nodes !== previousState?.nodes && !applyingNodes.current) {
+        pendingNodesSync = true;
+      }
+      if (state.edges !== previousState?.edges && !applyingEdges.current) {
+        pendingEdgesSync = true;
+      }
+      
+      // Debounce with very short delay (16ms = 1 frame) for batching rapid changes
+      // but still being responsive
+      if (syncTimeout) {
+        clearTimeout(syncTimeout);
+      }
+      syncTimeout = setTimeout(flushSync, 16);
     });
 
     // Clean up awareness when leaving - this notifies other clients immediately
@@ -397,6 +440,11 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       
       // Clear awareness state before disconnecting - this notifies others immediately
       cleanupAwareness();
+      
+      // Clear any pending sync
+      if (syncTimeout) {
+        clearTimeout(syncTimeout);
+      }
       
       clearInterval(connectionCheck);
       clearInterval(peerCheckInterval);

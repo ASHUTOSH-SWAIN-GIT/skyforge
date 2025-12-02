@@ -64,9 +64,9 @@ export function HowItWorks() {
           <div className="hidden lg:block absolute top-1/2 left-0 w-full h-0.5 bg-mocha-surface0 -translate-y-1/2" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-            {steps.map((step, index) => (
-              <div
-                key={index}
+          {steps.map((step, index) => (
+            <div
+              key={index}
                 className="relative group bg-mocha-mantle p-6 rounded-2xl border border-mocha-surface0 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
                 {/* Step Number (Timeline Dot) */}
@@ -89,7 +89,7 @@ export function HowItWorks() {
                 </p>
               </div>
             ))}
-          </div>
+            </div>
         </div>
       </div>
     </section>

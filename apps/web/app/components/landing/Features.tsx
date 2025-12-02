@@ -83,16 +83,16 @@ export function Features() {
             >
               <div className="flex flex-col h-full">
                 <div className={`w-10 h-10 rounded-lg ${feature.bg} ${feature.color} flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-300`}>
-                  {feature.icon}
-                </div>
-                
+                {feature.icon}
+              </div>
+
                 <h3 className="text-lg font-semibold text-mocha-text mb-2 group-hover:text-mocha-text/90">
-                  {feature.title}
-                </h3>
+                {feature.title}
+              </h3>
                 
                 <p className="text-sm text-mocha-subtext0 leading-relaxed">
-                  {feature.description}
-                </p>
+                {feature.description}
+              </p>
               </div>
             </div>
           ))}

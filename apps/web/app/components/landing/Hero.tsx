@@ -150,7 +150,7 @@ export function Hero() {
                   <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-mocha-surface0 bg-mocha-crust/50">
                     <div className="flex items-center gap-2 text-mocha-blue font-semibold text-xs sm:text-sm">
                       <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      users
+                    users
                     </div>
                     <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-mocha-blue/20 text-mocha-blue rounded-full font-medium">PK</span>
                   </div>
@@ -180,7 +180,7 @@ export function Hero() {
                   <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-mocha-surface0 bg-mocha-crust/50">
                     <div className="flex items-center gap-2 text-mocha-mauve font-semibold text-xs sm:text-sm">
                       <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      projects
+                    projects
                     </div>
                     <span className="text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 bg-mocha-mauve/20 text-mocha-mauve rounded-full font-medium">FK</span>
                   </div>
@@ -192,12 +192,12 @@ export function Hero() {
                     <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-blue/10 rounded-lg border border-mocha-blue/20">
                       <span className="text-mocha-blue font-medium">user_id</span>
                       <span className="text-mocha-overlay0">uuid</span>
-                    </div>
+                </div>
                     <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg">
                       <span className="text-mocha-subtext1">name</span>
                       <span className="text-mocha-overlay0">text</span>
-                    </div>
-                  </div>
+                </div>
+              </div>
                 </m.div>
 
                 {/* Table: Posts - Bottom Center */}
@@ -222,12 +222,12 @@ export function Hero() {
                     <div className="flex items-center justify-between p-1.5 sm:p-2 bg-mocha-mauve/10 rounded-lg border border-mocha-mauve/20">
                       <span className="text-mocha-mauve font-medium">project_id</span>
                       <span className="text-mocha-overlay0">uuid</span>
-                    </div>
+                </div>
                     <div className="flex items-center justify-between p-1.5 sm:p-2 rounded-lg">
                       <span className="text-mocha-subtext1">title</span>
                       <span className="text-mocha-overlay0">text</span>
                     </div>
-                  </div>
+                </div>
                 </m.div>
               </div>
             </div>

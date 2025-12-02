@@ -455,7 +455,7 @@ function CanvasInner() {
       setIsExportModalOpen(false);
       
       const code = format === "sql" 
-        ? await exportProjectSQL(project.id.toString())
+          ? await exportProjectSQL(project.id.toString())
         : await exportProjectPrisma(project.id.toString());
       
       setCodePreview(code);
@@ -653,14 +653,14 @@ function CanvasInner() {
           </div>
         )}
         {isOwner && (
-          <button
-            onClick={handleOpenShareModal}
-            disabled={!project}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-mocha-text rounded-full border border-mocha-surface0 bg-mocha-mantle/70 hover:bg-mocha-surface0 transition-colors disabled:opacity-50"
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </button>
+        <button
+          onClick={handleOpenShareModal}
+          disabled={!project}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-mocha-text rounded-full border border-mocha-surface0 bg-mocha-mantle/70 hover:bg-mocha-surface0 transition-colors disabled:opacity-50"
+        >
+          <Share2 className="w-4 h-4" />
+          Share
+        </button>
         )}
       </div>
 
@@ -780,16 +780,16 @@ function CanvasInner() {
                   <span>{isSaving ? "Saving..." : "Save Project"}</span>
                 </button>
                 
-                <button
+                  <button
                   onClick={() => setIsExportModalOpen(true)}
-                  disabled={isExporting}
-                  className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
-                >
-                  <div className="flex items-center gap-3">
-                    <Code className="w-4 h-4" />
+                    disabled={isExporting}
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Code className="w-4 h-4" />
                     <span>{isExporting ? "Exporting..." : "Export Code"}</span>
-                  </div>
-                </button>
+                    </div>
+                  </button>
               </div>
             </div>
 
@@ -817,7 +817,7 @@ function CanvasInner() {
                       <div
                         key={member.id}
                         className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-mocha-surface0/30 transition-colors"
-                      >
+                  >
                         <div className="relative">
                           {hasAvatar ? (
                             <img
@@ -831,14 +831,14 @@ function CanvasInner() {
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-mocha-surface0 flex items-center justify-center text-xs font-medium text-mocha-text border border-mocha-surface1">
                               {member.name?.charAt(0).toUpperCase() || "?"}
-                            </div>
+                    </div>
                           )}
                           {memberIsOwner && (
                             <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-mocha-yellow flex items-center justify-center">
                               <Crown className="w-2.5 h-2.5 text-mocha-crust" />
-                            </div>
+                </div>
                           )}
-                        </div>
+              </div>
                         <p className="text-sm font-medium text-mocha-text truncate flex-1 min-w-0">
                           {member.name}
                           {member.id === user?.id && (
@@ -859,15 +859,15 @@ function CanvasInner() {
       <div className="flex-1 relative">
         {/* Header - Back Button and Hamburger Menu */}
         <div className="absolute top-4 left-4 z-20 flex items-center gap-2">
-          {!isSidebarOpen && (
-            <button
-              onClick={() => setIsSidebarOpen(true)}
+      {!isSidebarOpen && (
+        <button
+          onClick={() => setIsSidebarOpen(true)}
               className="p-2.5 bg-mocha-mantle/90 backdrop-blur-sm border border-mocha-surface0 rounded-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text shadow-lg"
-              title="Open Sidebar"
-            >
+          title="Open Sidebar"
+        >
               <Menu className="w-5 h-5" />
-            </button>
-          )}
+        </button>
+      )}
           <button
             onClick={() => router.push("/dashboard")}
             className="px-4 py-2 text-sm text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0 rounded-lg transition-colors border border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-sm"
@@ -1038,7 +1038,7 @@ function CanvasInner() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button
+              <button
                   onClick={handleCopyCode}
                   className="flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
                 >
@@ -1057,9 +1057,9 @@ function CanvasInner() {
                 <button
                   onClick={() => setCodePreview(null)}
                   className="p-1.5 rounded-lg border border-mocha-surface0 text-mocha-subtext0 hover:bg-mocha-surface0 transition-colors"
-                >
+              >
                   <X className="w-4 h-4" />
-                </button>
+              </button>
               </div>
             </div>
             <div className="p-6 max-h-[70vh] overflow-auto font-mono text-sm text-mocha-subtext1 whitespace-pre-wrap bg-mocha-base/60">
