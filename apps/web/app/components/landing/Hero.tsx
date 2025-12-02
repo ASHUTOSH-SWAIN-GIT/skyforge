@@ -10,11 +10,6 @@ export function Hero() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-mocha-crust">
 
-      {/* Gradient Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-mocha-mauve/30 rounded-full blur-[128px] animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-mocha-blue/20 rounded-full blur-[128px] animate-pulse delay-1000" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-mocha-sapphire/10 rounded-full blur-[128px]" />
-
       <LazyMotion features={domAnimation}>
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-20">
         <div className="text-center">
@@ -46,7 +41,7 @@ export function Hero() {
           >
             <span className="text-mocha-text">Design databases</span>
             <br />
-            <span className="bg-gradient-to-r from-mocha-mauve via-mocha-pink to-mocha-blue bg-clip-text text-transparent">
+            <span className="text-mocha-mauve">
               visually, ship faster
             </span>
           </m.h1>
@@ -71,27 +66,21 @@ export function Hero() {
           >
             {!isLoading && user ? (
               <Link href="/dashboard">
-                <button className="group relative px-8 py-4 rounded-xl font-semibold text-mocha-crust overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-mocha-mauve/25">
-                  <div className="absolute inset-0 bg-gradient-to-r from-mocha-mauve via-mocha-pink to-mocha-mauve bg-[length:200%_100%] animate-gradient-x" />
-                  <span className="relative flex items-center gap-2">
-                    Get Started
-                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                  </span>
+                <button className="group flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 transition-all">
+                  Get Started
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
             ) : (
               <>
                 <Link href="/login">
-                  <button className="group relative px-8 py-4 rounded-xl font-semibold text-mocha-crust overflow-hidden transition-all hover:scale-105 hover:shadow-2xl hover:shadow-mocha-mauve/25">
-                    <div className="absolute inset-0 bg-gradient-to-r from-mocha-mauve via-mocha-pink to-mocha-mauve bg-[length:200%_100%] animate-gradient-x" />
-                    <span className="relative flex items-center gap-2">
-                      Start Building Free
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </span>
+                  <button className="group flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 transition-all">
+                    Start Building Free
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
-                <button className="group flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-mocha-text bg-mocha-surface0/50 border border-mocha-surface1 backdrop-blur-sm hover:bg-mocha-surface0 transition-all">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-mocha-surface1 group-hover:bg-mocha-mauve group-hover:text-mocha-crust transition-colors">
+                <button className="group flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-mocha-text bg-mocha-surface0 border border-mocha-surface1 hover:bg-mocha-surface1 transition-all">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-mocha-surface1 group-hover:bg-mocha-surface2 transition-colors">
                     <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
                   </div>
                   Watch Demo
@@ -107,9 +96,6 @@ export function Hero() {
           transition={{ duration: 0.8, delay: 0.5 }}
             className="relative max-w-5xl mx-auto"
         >
-            {/* Glow Effect */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-mocha-mauve/20 via-mocha-blue/20 to-mocha-mauve/20 rounded-3xl blur-2xl opacity-50" />
-            
             {/* Browser Frame */}
             <div className="relative rounded-2xl border border-mocha-surface0 bg-mocha-mantle/80 backdrop-blur-xl shadow-2xl shadow-mocha-crust/50 overflow-hidden">
               {/* Browser Header */}

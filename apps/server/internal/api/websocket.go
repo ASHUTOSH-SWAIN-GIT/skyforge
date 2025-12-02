@@ -4,8 +4,18 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	// Time allowed to write a message to the peer
+	writeWait = 10 * time.Second
+	// Time allowed to read the next pong message from the peer
+	pongWait = 60 * time.Second
+	// Send pings to peer with this period (must be less than pongWait)
+	pingPeriod = (pongWait * 9) / 10
 )
 
 var upgrader = websocket.Upgrader{
@@ -14,8 +24,10 @@ var upgrader = websocket.Upgrader{
 		// In production, you should check the origin
 		return true
 	},
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  4096,
+	WriteBufferSize: 4096,
+	// Enable compression for better performance
+	EnableCompression: true,
 }
 
 // Room represents a collaboration room
@@ -100,6 +112,31 @@ func (h *CollaborationHub) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 		}
 	}()
 
+	// Set up ping/pong handlers for connection health
+	conn.SetReadDeadline(time.Now().Add(pongWait))
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
+
+	// Start a goroutine to send periodic pings
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(pingPeriod)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				conn.SetWriteDeadline(time.Now().Add(writeWait))
+				if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+					return
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+
 	// Broadcast messages to all clients in the room (including sender for Yjs sync)
 	for {
 		messageType, message, err := conn.ReadMessage()
@@ -118,8 +155,9 @@ func (h *CollaborationHub) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 		}
 		room.mu.RUnlock()
 
-		// Broadcast to all clients
+		// Broadcast to all clients with write deadline
 		for _, client := range clients {
+			client.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := client.WriteMessage(messageType, message); err != nil {
 				log.Printf("Error broadcasting message: %v", err)
 				client.Close()
@@ -129,5 +167,8 @@ func (h *CollaborationHub) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 			}
 		}
 	}
+	
+	// Signal ping goroutine to stop
+	close(done)
 }
 

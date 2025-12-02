@@ -73,7 +73,7 @@ export function Navbar() {
                       );
                     }
                     return (
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-mocha-surface1 to-mocha-surface0 flex items-center justify-center text-xs font-medium border border-mocha-surface1 text-mocha-text">
+                      <div className="h-8 w-8 rounded-full bg-mocha-surface1 flex items-center justify-center text-xs font-medium border border-mocha-surface0 text-mocha-text">
                         {user.name?.charAt(0)?.toUpperCase() || "U"}
                       </div>
                     );
@@ -89,9 +89,8 @@ export function Navbar() {
                   </button>
                 </Link>
                 <Link href="/login">
-                  <button className="relative group px-5 py-2.5 text-sm font-semibold text-mocha-crust rounded-full overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-r from-mocha-mauve via-mocha-pink to-mocha-mauve bg-[length:200%_100%] animate-gradient-x" />
-                    <span className="relative">Get Started</span>
+                  <button className="px-5 py-2.5 text-sm font-semibold text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 rounded-full transition-colors">
+                    Get Started
                   </button>
                 </Link>
               </>

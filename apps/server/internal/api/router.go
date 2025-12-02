@@ -62,8 +62,17 @@ func NewRouter(authHandler *auth.Handler, projectHandler *ProjectHandler, hub *C
 	// WebSocket Routes for Collaboration
 	mux.HandleFunc("/ws/collaboration/", hub.HandleWebSocket)
 
+	// Health check endpoint - can be hit by cron job to keep server alive
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("OK"))
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Write([]byte(`{"status":"ok"}`))
+	})
+
+	// Ping endpoint - lightweight endpoint for cron jobs/uptime monitors
+	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Write([]byte("pong"))
 	})
 
 	return corsMiddleware(mux)

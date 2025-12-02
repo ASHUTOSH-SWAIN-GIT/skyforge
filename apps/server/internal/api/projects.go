@@ -88,6 +88,11 @@ func (h *ProjectHandler) GetMyProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Ensure we return an empty array instead of null for new users
+	if projects == nil {
+		projects = []database.GetProjectsByUserRow{}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(projects)
 }

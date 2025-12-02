@@ -6,15 +6,17 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/cache"
 	"github.com/ASHUTOSH-SWAIN-GIT/skyforge/server/internal/database"
 	"github.com/google/uuid"
 )
+
+const userCacheTTL = 5 * time.Minute
 
 type Handler struct {
 	DB *database.Queries
@@ -144,15 +146,27 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check cache first
+	cacheKey := "user:" + userID.String()
+	if cached, found := cache.GetGlobal().Get(cacheKey); found {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Cache", "HIT")
+		json.NewEncoder(w).Encode(cached)
+		return
+	}
+
 	// fetch user from the db
 	user, err := h.DB.GetUserByID(r.Context(), userID)
 	if err != nil {
-		// Log the error to see if it's DB issue or not found
-		fmt.Printf("User not found or DB error: %v\n", err)
 		http.Error(w, "user not found ", http.StatusNotFound)
 		return
 	}
+
+	// Cache the user
+	cache.GetGlobal().Set(cacheKey, user, userCacheTTL)
+
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Cache", "MISS")
 	json.NewEncoder(w).Encode(user)
 }
 

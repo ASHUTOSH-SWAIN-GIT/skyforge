@@ -27,7 +27,7 @@ func main() {
 		dbURL = os.Getenv("DB_URL")
 		if dbURL == "" {
 			log.Fatal("DATABASE_URL or DB_URL environment variable not set")
-		}
+	}
 	}
 
 	// Parse config for connection
