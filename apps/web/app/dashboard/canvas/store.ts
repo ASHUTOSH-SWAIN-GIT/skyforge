@@ -161,8 +161,21 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       });
       return;
     }
+    
+    // Normalize nodes to ensure constraints is always an array
+    const normalizedNodes = (data.nodes || []).map((node: any) => ({
+      ...node,
+      data: {
+        ...node.data,
+        columns: (node.data?.columns || []).map((col: any) => ({
+          ...col,
+          constraints: Array.isArray(col.constraints) ? col.constraints : [],
+        })),
+      },
+    }));
+    
     set({
-      nodes: data.nodes || [],
+      nodes: normalizedNodes,
       edges: data.edges || [],
       selectedNodeId: null,
     });

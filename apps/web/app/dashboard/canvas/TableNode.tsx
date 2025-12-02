@@ -243,7 +243,7 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
               )}
 
               {/* Not Null Badge */}
-              {column.constraints.includes("NN") && (
+              {column.constraints && column.constraints.includes("NN") && (
                 <span className="text-[10px] text-mocha-peach font-medium flex-shrink-0">
                   NN
                 </span>
