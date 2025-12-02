@@ -14,9 +14,11 @@ export const metadata: Metadata = {
   title: 'Skyforge - Database Design Tool',
   description: 'Collaborative database schema design using Go and Next.js',
   icons: {
-    icon: '/skyforge.jpg',
-    shortcut: '/skyforge.jpg',
-    apple: '/skyforge.jpg',
+    icon: [
+      { url: '/icon.jpg?v=1', type: 'image/jpeg' },
+    ],
+    shortcut: '/icon.jpg?v=1',
+    apple: '/icon.jpg?v=1',
   },
 }
 
