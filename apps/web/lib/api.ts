@@ -4,12 +4,10 @@ type FetchOptions = {
     headers?:Record<string,string>
 }
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_SERVER_URL?.replace(/\/$/, "") || null;
-
 export async function api<T>(path: string, options: FetchOptions = {}) {
   const { method = "GET", body, headers = {} } = options;
-  const url = API_BASE_URL ? `${API_BASE_URL}${path}` : `/api${path}`;
+  // Always use /api prefix to go through Next.js API routes which properly forward cookies
+  const url = `/api${path}`;
 
   const res = await fetch(url, {
         method,

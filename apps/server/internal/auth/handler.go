@@ -95,35 +95,31 @@ func (h *Handler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Configure cookie attributes (different for local vs production)
-	sameSite := http.SameSiteLaxMode
-	secure := false
-	if os.Getenv("ENV") == "production" {
-		// In production we're on a different domain than the frontend,
-		// so we need SameSite=None and Secure=true for the browser to
-		// send the cookie on cross-site XHR/fetch requests.
-		sameSite = http.SameSiteNoneMode
-		secure = true
-	}
-
-	// set the token in the cookies
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_token",
-		Value:    jwtToken,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
-		HttpOnly: true,
-		Path:     "/",
-		SameSite: sameSite,
-		Secure:   secure,
-	})
-
-	// Redirect back to frontend dashboard
+	// Redirect back to frontend dashboard with token in URL
+	// The frontend will set it as a cookie on its own domain
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
 		// Fallback for local development
 		frontendURL = "http://localhost:3000"
 	}
-	http.Redirect(w, r, frontendURL+"/dashboard", http.StatusSeeOther)
+
+	// In production, pass token via URL so frontend can set cookie on its domain
+	// In local dev, we can set cookie directly since same origin
+	if os.Getenv("ENV") == "production" {
+		http.Redirect(w, r, frontendURL+"/dashboard?token="+jwtToken, http.StatusSeeOther)
+	} else {
+		// Local development: set cookie directly since same origin
+		http.SetCookie(w, &http.Cookie{
+			Name:     "auth_token",
+			Value:    jwtToken,
+			Expires:  time.Now().Add(7 * 24 * time.Hour),
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteLaxMode,
+			Secure:   false,
+		})
+		http.Redirect(w, r, frontendURL+"/dashboard", http.StatusSeeOther)
+	}
 }
 
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
@@ -161,6 +157,14 @@ func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	// Configure cookie attributes (different for local vs production)
+	sameSite := http.SameSiteLaxMode
+	secure := false
+	if os.Getenv("ENV") == "production" {
+		sameSite = http.SameSiteNoneMode
+		secure = true
+	}
+
 	// Clear the auth_token cookie by setting it to expire in the past
 	http.SetCookie(w, &http.Cookie{
 		Name:     "auth_token",
@@ -168,8 +172,8 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		Expires:  time.Now().Add(-1 * time.Hour),
 		HttpOnly: true,
 		Path:     "/",
-		SameSite: http.SameSiteLaxMode,
-		Secure:   false, // set true in prod
+		SameSite: sameSite,
+		Secure:   secure,
 	})
 
 	w.Header().Set("Content-Type", "application/json")

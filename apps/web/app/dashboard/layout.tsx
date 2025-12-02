@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useUser } from "../../hooks/useUser";
 import { LogOut, ChevronDown } from "lucide-react";
 
@@ -12,9 +12,41 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const [showLogout, setShowLogout] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Handle token from OAuth callback (production only)
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      // Exchange token with backend and set cookie server-side (HttpOnly for security)
+      fetch("/api/auth/set-token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token }),
+        credentials: "include",
+      })
+        .then((res) => {
+          if (res.ok) {
+            // Remove token from URL
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete("token");
+            router.replace(newUrl.pathname + (newUrl.search ? newUrl.search : ""));
+          } else {
+            console.error("Failed to set auth token");
+            router.replace("/login");
+          }
+        })
+        .catch((err) => {
+          console.error("Error setting auth token:", err);
+          router.replace("/login");
+        });
+    }
+  }, [searchParams, router]);
   
   // Check if we're on a canvas page - don't show header for canvas
   const isCanvasPage = pathname?.includes("/canvas/");
