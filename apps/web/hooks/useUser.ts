@@ -13,6 +13,8 @@ export function useUser() {
     shouldRetryOnError: false,
     revalidateOnFocus: false,
     revalidateOnReconnect: false,
+    dedupingInterval: 60000, // Cache user data for 1 minute
+    revalidateIfStale: false, // Don't revalidate stale data automatically
   });
 
   // Handle auth errors by redirecting to login (only on protected routes)
