@@ -29,6 +29,8 @@ export interface CanvasState {
   updateTableName: (nodeId: string, name: string) => void;
   addColumn: (nodeId: string) => void;
   updateColumn: (nodeId: string, columnId: string, updates: Partial<Column>) => void;
+  toggleColumnNotNull: (nodeId: string, columnId: string) => void;
+  toggleAllColumnsNotNull: (nodeId: string) => void;
   deleteColumn: (nodeId: string, columnId: string) => void;
   deleteTable: (nodeId: string) => void;
   deleteEdge: (edgeId: string) => void;
@@ -116,6 +118,81 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
           : node
       ),
     }));
+  },
+
+  toggleColumnNotNull: (nodeId, columnId) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        node.id === nodeId
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                columns: node.data.columns.map((col: Column) => {
+                  if (col.id !== columnId) return col;
+                  
+                  const constraints = col.constraints || [];
+                  const hasNN = constraints.includes("NN");
+                  
+                  return {
+                    ...col,
+                    constraints: hasNN
+                      ? constraints.filter((c) => c !== "NN")
+                      : [...constraints, "NN"],
+                  };
+                }),
+              },
+            }
+          : node
+      ),
+    }));
+  },
+
+  toggleAllColumnsNotNull: (nodeId) => {
+    set((state) => {
+      const node = state.nodes.find((n) => n.id === nodeId);
+      if (!node) return state;
+
+      const allNotNull = node.data.columns.every(
+        (col: Column) => (col.constraints || []).includes("NN") || col.isPrimaryKey
+      );
+
+      return {
+        nodes: state.nodes.map((n) =>
+          n.id === nodeId
+            ? {
+                ...n,
+                data: {
+                  ...n.data,
+                  columns: n.data.columns.map((col: Column) => {
+                    // Don't toggle primary keys - they should always be NOT NULL
+                    if (col.isPrimaryKey) return col;
+                    
+                    const constraints = col.constraints || [];
+                    const hasNN = constraints.includes("NN");
+                    
+                    if (allNotNull && hasNN) {
+                      // Remove NN constraint
+                      return {
+                        ...col,
+                        constraints: constraints.filter((c) => c !== "NN"),
+                      };
+                    } else if (!allNotNull && !hasNN) {
+                      // Add NN constraint
+                      return {
+                        ...col,
+                        constraints: [...constraints, "NN"],
+                      };
+                    }
+                    
+                    return col;
+                  }),
+                },
+              }
+            : n
+        ),
+      };
+    });
   },
 
   deleteColumn: (nodeId, columnId) => {

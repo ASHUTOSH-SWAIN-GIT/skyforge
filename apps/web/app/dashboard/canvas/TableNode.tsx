@@ -27,7 +27,7 @@ const DATA_TYPES = [
 ];
 
 function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
-  const { updateTableName, addColumn, updateColumn, deleteColumn, deleteTable } =
+  const { updateTableName, addColumn, updateColumn, deleteColumn, deleteTable, toggleColumnNotNull, toggleAllColumnsNotNull } =
     useCanvasStore();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
@@ -75,6 +75,21 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
       // Auto-hide after 3 seconds
       setTimeout(() => setShowDeleteConfirm(false), 3000);
     }
+  };
+
+  // Check if all columns (except primary keys) are NOT NULL
+  const allColumnsNotNull = data.columns.length > 0 && data.columns.every((col: Column) => {
+    // Primary keys are always NOT NULL, so exclude them from the check
+    if (col.isPrimaryKey) return true;
+    return (col.constraints || []).includes("NN");
+  });
+
+  const handleToggleAllNotNull = () => {
+    toggleAllColumnsNotNull(id);
+  };
+
+  const handleToggleColumnNotNull = (columnId: string) => {
+    toggleColumnNotNull(id, columnId);
   };
 
   return (
@@ -133,6 +148,22 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
+
+      {/* All Columns NOT NULL Toggle */}
+      {data.columns.length > 0 && allColumnsNotNull && (
+        <div className="px-3 py-2 border-b border-mocha-surface0/50 bg-mocha-surface0/20">
+          <button
+            onClick={handleToggleAllNotNull}
+            className="w-full flex items-center justify-between gap-2 px-2 py-1.5 text-xs text-mocha-subtext0 hover:text-mocha-text hover:bg-mocha-surface0/50 rounded transition-colors"
+            title="All columns are NOT NULL. Click to make them nullable."
+          >
+            <span className="flex items-center gap-2">
+              <span className="text-mocha-peach font-medium">All columns NOT NULL</span>
+            </span>
+            <span className="text-[10px] text-mocha-overlay0">Click to toggle off</span>
+          </button>
+        </div>
+      )}
 
       {/* Column List */}
       <div className="py-1">
@@ -242,12 +273,24 @@ function TableNode({ id, data, selected }: NodeProps<TableNodeData>) {
                 </span>
               )}
 
-              {/* Not Null Badge */}
-              {column.constraints && column.constraints.includes("NN") && (
-                <span className="text-[10px] text-mocha-peach font-medium flex-shrink-0">
+              {/* Not Null Badge - Clickable to toggle */}
+              {column.constraints && column.constraints.includes("NN") ? (
+                <button
+                  onClick={() => handleToggleColumnNotNull(column.id)}
+                  className="text-[10px] text-mocha-peach font-medium flex-shrink-0 px-1.5 py-0.5 rounded hover:bg-mocha-peach/10 transition-colors"
+                  title="Click to remove NOT NULL constraint"
+                >
                   NN
-                </span>
-              )}
+                </button>
+              ) : !column.isPrimaryKey ? (
+                <button
+                  onClick={() => handleToggleColumnNotNull(column.id)}
+                  className="text-[10px] text-mocha-overlay0 font-medium flex-shrink-0 px-1.5 py-0.5 rounded hover:bg-mocha-surface0 hover:text-mocha-peach transition-colors opacity-0 group-hover:opacity-100"
+                  title="Click to add NOT NULL constraint"
+                >
+                  NULL
+                </button>
+              ) : null}
 
               {/* Delete Column */}
               <button
