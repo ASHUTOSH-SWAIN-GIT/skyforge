@@ -22,10 +22,8 @@ export default function WorkspacePage() {
     projectsFetcher,
     {
       revalidateOnFocus: false,
-      dedupingInterval: 30000, // Cache projects for 30 seconds
-      fallbackData: [],
-      revalidateIfStale: false,
-      keepPreviousData: true,
+      dedupingInterval: 5000, // Dedupe requests within 5 seconds
+      revalidateOnMount: true, // Always fetch on mount
     }
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
