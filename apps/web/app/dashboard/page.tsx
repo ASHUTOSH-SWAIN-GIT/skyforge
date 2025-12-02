@@ -9,7 +9,11 @@ import CreateProjectModal from "../components/CreateProjectModal";
 import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2, AlertCircle, X } from "lucide-react";
 import { ProjectMembers } from "./components/ProjectMembers";
 
-const projectsFetcher = () => getMyProjects();
+const projectsFetcher = async () => {
+  const projects = await getMyProjects();
+  // Ensure we always return an array, even if backend returns null
+  return projects || [];
+};
 
 export default function WorkspacePage() {
   const router = useRouter();
@@ -135,8 +139,8 @@ export default function WorkspacePage() {
         </div>
       </div>
 
-      {/* Error Message */}
-      {(errorMessage || fetchError) && (
+      {/* Error Message - Don't show for 401 errors (handled by auth redirect) */}
+      {(errorMessage || (fetchError && (fetchError as any)?.status !== 401)) && (
         <div className="flex items-center gap-3 rounded-xl border border-mocha-red/30 bg-mocha-red/10 text-mocha-red px-4 py-3 text-sm">
           <AlertCircle className="w-5 h-5 flex-shrink-0" />
           <span className="flex-1">{errorMessage || "Failed to load projects. Please try again."}</span>
@@ -148,7 +152,7 @@ export default function WorkspacePage() {
               Retry
             </button>
           )}
-      {errorMessage && (
+          {errorMessage && (
             <button
               onClick={() => setErrorMessage(null)}
               className="p-1 hover:bg-mocha-red/20 rounded transition-colors"
