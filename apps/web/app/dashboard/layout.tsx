@@ -35,10 +35,11 @@ export default function DashboardLayout({
       })
         .then((res) => {
           if (res.ok) {
-            // Remove token from URL
+            // Remove token from URL and do a full page reload to clear SWR cache
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete("token");
-            router.replace(newUrl.pathname + (newUrl.search ? newUrl.search : ""));
+            // Use window.location.href for a full reload to clear any stale cached data
+            window.location.href = newUrl.pathname;
           } else {
             console.error("Failed to set auth token");
             router.replace("/login");
