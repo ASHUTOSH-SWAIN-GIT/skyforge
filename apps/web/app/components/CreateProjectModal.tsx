@@ -52,8 +52,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
       onSuccess?.();
       onClose();
       router.refresh();
-    } catch (error) {
-      console.error("Failed to create project", error);
+    } catch {
       setError("Failed to create project. Please try again.");
     } finally {
       setIsLoading(false);

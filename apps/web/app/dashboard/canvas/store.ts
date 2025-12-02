@@ -64,11 +64,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         ],
       },
     };
-    set((state) => {
-      const newNodes = [...state.nodes, newNode];
-      console.log("Adding table node. Total nodes:", newNodes.length);
-      return { nodes: newNodes };
-    });
+    set((state) => ({ nodes: [...state.nodes, newNode] }));
   },
 
   updateTableName: (nodeId, name) => {

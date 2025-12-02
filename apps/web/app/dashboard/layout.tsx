@@ -38,15 +38,12 @@ export default function DashboardLayout({
             // Remove token from URL and do a full page reload to clear SWR cache
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete("token");
-            // Use window.location.href for a full reload to clear any stale cached data
             window.location.href = newUrl.pathname;
           } else {
-            console.error("Failed to set auth token");
             router.replace("/login");
           }
         })
-        .catch((err) => {
-          console.error("Error setting auth token:", err);
+        .catch(() => {
           router.replace("/login");
         });
     }
@@ -149,8 +146,7 @@ export default function DashboardLayout({
                       }
                       
                       window.location.href = "/";
-                    } catch (error) {
-                      console.error("Logout error:", error);
+                    } catch {
                       document.cookie = "auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
                       window.location.href = "/";
                     }

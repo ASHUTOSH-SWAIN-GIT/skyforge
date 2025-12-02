@@ -196,8 +196,7 @@ function CanvasInner() {
             if (canvasData && (canvasData.nodes || canvasData.edges)) {
               loadFromData(canvasData);
             }
-          } catch (error) {
-            console.error("Failed to parse canvas data", error);
+          } catch {
             // If parsing fails, ensure we have empty canvas
             setNodes([]);
             setEdges([]);
@@ -207,8 +206,7 @@ function CanvasInner() {
           setNodes([]);
           setEdges([]);
         }
-      } catch (error) {
-        console.error("Failed to fetch project", error);
+      } catch {
         router.push("/dashboard");
       } finally {
         setIsLoading(false);
@@ -252,9 +250,8 @@ function CanvasInner() {
 
         const destinationProjectId = response.projectId || projectId;
         router.replace(`/dashboard/canvas/${destinationProjectId}`);
-      } catch (err) {
+      } catch {
         if (!cancelled) {
-          console.error("Failed to join share link", err);
           setJoinError("Share link is invalid or has expired.");
           router.push("/dashboard");
         }
@@ -293,8 +290,6 @@ function CanvasInner() {
           if (!shareTokenParam) {
             setCollabRoomKey(null);
           }
-        } else {
-          console.error("Failed to get share link", err);
         }
       }
     };
@@ -324,8 +319,7 @@ function CanvasInner() {
           );
           setProjectMembers(uniqueMembers);
         }
-      } catch (error) {
-        console.error("Failed to fetch project members", error);
+      } catch {
         if (!cancelled) {
           setProjectMembers([]);
         }
@@ -353,8 +347,7 @@ function CanvasInner() {
         data: canvasData,
       });
       showToast("Project saved successfully", "success");
-    } catch (error) {
-      console.error("Failed to save project", error);
+    } catch {
       showToast("Failed to save project. Please try again.", "error");
     } finally {
       setIsSaving(false);
@@ -368,8 +361,7 @@ function CanvasInner() {
     try {
       const position = screenToFlowPosition({ x: centerX, y: centerY });
       addTable(position.x, position.y);
-    } catch (error) {
-      console.error("Error adding table:", error);
+    } catch {
       // Fallback: add at fixed position if screenToFlowPosition fails
       addTable(400, 300);
     }
@@ -385,8 +377,7 @@ function CanvasInner() {
         const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
         addTable(position.x, position.y);
         lastClickTime.current = 0; // Reset to prevent triple-click
-      } catch (error) {
-        console.error("Error adding table on double-click:", error);
+      } catch {
         // Fallback: add at click position relative to viewport
         addTable(event.clientX - 140, event.clientY - 100);
       }
@@ -418,13 +409,12 @@ function CanvasInner() {
             // Fit view after import
             setTimeout(() => fitView({ padding: 0.2 }), 100);
           }
-        } catch (error) {
-          console.error("Failed to parse imported canvas data", error);
+        } catch {
+          // Parsing failed, keep current canvas state
         }
       }
       showToast("SQL imported successfully", "success");
     } catch (error) {
-      console.error("Failed to import SQL", error);
       showToast(error instanceof Error ? error.message : "Failed to import SQL file", "error");
     } finally {
       setIsImporting(false);
@@ -459,8 +449,7 @@ function CanvasInner() {
         : await exportProjectPrisma(project.id.toString());
       
       setCodePreview(code);
-    } catch (error) {
-      console.error(`Failed to export ${format}`, error);
+    } catch {
       showToast(`Failed to generate ${format === "sql" ? "SQL" : "Prisma schema"}. Please try again.`, "error");
       setCodePreview(null);
     } finally {
@@ -519,7 +508,6 @@ function CanvasInner() {
       // Fit view after adding new nodes
       setTimeout(() => fitView({ padding: 0.2 }), 100);
     } catch (error) {
-      console.error("Failed to generate tables with AI", error);
       setAiError(error instanceof Error ? error.message : "Failed to generate tables");
     } finally {
       setIsAIGenerating(false);
@@ -551,8 +539,7 @@ function CanvasInner() {
       await navigator.clipboard.writeText(shareUrl);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 1500);
-    } catch (error) {
-      console.error("Failed to copy share link", error);
+    } catch {
       setShareError("Unable to copy link automatically. Please copy it manually.");
     }
   }, [shareInfo, shareUrl]);
@@ -897,19 +884,13 @@ function CanvasInner() {
               });
             }}
             onConnect={(connection: Connection) => {
-              // Only allow connections between column handles, not node-level connections
-              if (!connection.source || !connection.target) {
-                console.warn("Missing source or target", connection);
-                return;
-              }
-              if (!connection.sourceHandle || !connection.targetHandle) {
-                console.warn("Connections must be made between specific columns", connection);
+              // Only allow connections between column handles
+              if (!connection.source || !connection.target || !connection.sourceHandle || !connection.targetHandle) {
                 return;
               }
               
-              const edgeId = `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`;
               const newEdge = {
-                id: edgeId,
+                id: `edge-${connection.source}-${connection.sourceHandle}-${connection.target}-${connection.targetHandle}-${Date.now()}`,
                 source: connection.source,
                 target: connection.target,
                 sourceHandle: connection.sourceHandle,
@@ -917,17 +898,10 @@ function CanvasInner() {
                 type: "smoothstep" as const,
                 animated: true,
                 deletable: true,
-                style: { 
-                  stroke: "#b4befe", 
-                  strokeWidth: 2, 
-                  strokeDasharray: "5 5",
-                },
+                style: { stroke: "#b4befe", strokeWidth: 2, strokeDasharray: "5 5" },
               };
               
-              console.log("Creating edge:", newEdge);
-              const updated = [...edges, newEdge];
-              console.log("Updated edges:", updated);
-              setEdges(updated);
+              setEdges([...edges, newEdge]);
             }}
             onPaneClick={handlePaneClick}
             nodeTypes={nodeTypes}

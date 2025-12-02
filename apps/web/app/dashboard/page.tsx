@@ -54,7 +54,6 @@ export default function WorkspacePage() {
         setDeleteError("Only project owners can delete projects.");
         // Don't log expected permission errors to console
       } else {
-      console.error("Failed to delete project", error);
         setErrorMessage(error instanceof Error ? error.message : "Failed to delete project. Please try again.");
       }
       // Revert optimistic update on error

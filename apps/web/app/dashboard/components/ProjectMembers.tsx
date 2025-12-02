@@ -36,8 +36,7 @@ export function ProjectMembers({ projectId, maxDisplay = 3 }: ProjectMembersProp
         if (!cancelled) {
           setCollaborators(data);
         }
-      } catch (error) {
-        console.error("Failed to fetch collaborators", error);
+      } catch {
         if (!cancelled) {
           setCollaborators([]);
         }
