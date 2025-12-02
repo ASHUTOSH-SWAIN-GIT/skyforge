@@ -13,6 +13,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'Skyforge - Database Design Tool',
   description: 'Collaborative database schema design using Go and Next.js',
+  icons: {
+    icon: '/skyforge.jpg',
+    shortcut: '/skyforge.jpg',
+    apple: '/skyforge.jpg',
+  },
 }
 
 export default function RootLayout({
