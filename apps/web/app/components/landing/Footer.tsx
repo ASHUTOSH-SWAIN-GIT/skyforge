@@ -55,6 +55,8 @@ export function Footer() {
                 <Link
                   key={index}
                   href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   aria-label={social.label}
                   className="w-10 h-10 rounded-lg bg-mocha-surface0/50 hover:bg-mocha-surface0 flex items-center justify-center text-mocha-overlay0 hover:text-mocha-text transition-colors"
                 >

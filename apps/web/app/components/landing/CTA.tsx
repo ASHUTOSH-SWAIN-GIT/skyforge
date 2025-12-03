@@ -25,7 +25,7 @@ export function CTA() {
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
-            <Link href="https://github.com/lowkeydev/skyforge" target="_blank">
+            <Link href="https://github.com/ASHUTOSH-SWAIN-GIT/skyforge" target="_blank">
               <button className="px-8 py-3.5 rounded-xl font-semibold text-mocha-text bg-mocha-surface0 hover:bg-mocha-surface1 transition-colors flex items-center gap-2">
                 <Github className="w-4 h-4" />
                 Star on GitHub
