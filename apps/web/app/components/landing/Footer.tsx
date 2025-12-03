@@ -28,7 +28,7 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: <Github className="w-5 h-5" />, href: 'https://github.com/lowkeydev/skyforge', label: 'GitHub' },
+  { icon: <Github className="w-5 h-5" />, href: 'https://github.com/ASHUTOSH-SWAIN-GIT/skyforge', label: 'GitHub' },
   { icon: <Twitter className="w-5 h-5" />, href: '#', label: 'Twitter' },
   { icon: <Linkedin className="w-5 h-5" />, href: '#', label: 'LinkedIn' },
   { icon: <Mail className="w-5 h-5" />, href: '#', label: 'Email' },
