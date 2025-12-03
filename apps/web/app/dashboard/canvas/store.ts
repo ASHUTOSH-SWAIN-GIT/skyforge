@@ -110,9 +110,17 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
               ...node,
               data: {
                 ...node.data,
-                columns: node.data.columns.map((col: Column) =>
-                  col.id === columnId ? { ...col, ...updates } : col
-                ),
+                columns: node.data.columns.map((col: Column) => {
+                  // If setting a column as primary key, remove primary key from all other columns
+                  if (updates.isPrimaryKey === true && col.id !== columnId) {
+                    return { ...col, isPrimaryKey: false };
+                  }
+                  // Apply updates to the target column
+                  if (col.id === columnId) {
+                    return { ...col, ...updates };
+                  }
+                  return col;
+                }),
               },
             }
           : node

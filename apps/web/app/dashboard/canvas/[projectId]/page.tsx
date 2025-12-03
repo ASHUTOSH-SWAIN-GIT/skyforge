@@ -1018,12 +1018,8 @@ function CanvasInner() {
                   Generating {exportFormat === "sql" ? "PostgreSQL" : "Prisma"} Schema
                 </h3>
                 <p className="text-sm text-mocha-subtext0">
-                  AI is analyzing your schema and generating optimized code...
+                  Processing your schema...
                 </p>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-mocha-overlay0">
-                <Sparkles className="w-3 h-3 text-mocha-mauve animate-pulse" />
-                <span>Powered by AI</span>
               </div>
             </div>
           </div>
