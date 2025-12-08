@@ -6,7 +6,7 @@ import useSWR from "swr";
 import { deleteProject as deleteProjectApi, getMyProjects } from "../../lib/projects";
 import { Project } from "../../types";
 import CreateProjectModal from "../components/CreateProjectModal";
-import { Plus, Database, MoreVertical, ArrowRight, Trash2, Loader2, AlertCircle, X } from "lucide-react";
+import { Plus, Database, ArrowRight, Trash2, Loader2, AlertCircle, X } from "lucide-react";
 import { ProjectMembers } from "./components/ProjectMembers";
 
 const projectsFetcher = async () => {
@@ -27,7 +27,6 @@ export default function WorkspacePage() {
     }
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [menuProjectId, setMenuProjectId] = useState<string | null>(null);
   const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
@@ -49,7 +48,6 @@ export default function WorkspacePage() {
         false
       );
       await deleteProjectApi(projectId);
-      setMenuProjectId(null);
       // Revalidate to ensure consistency
       mutate();
     } catch (error: any) {
@@ -211,11 +209,16 @@ export default function WorkspacePage() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setMenuProjectId((prev) => (prev === project.id ? null : project.id));
+                      setDeleteConfirm({ id: project.id, name: project.name });
                     }}
-                    className="p-2 hover:bg-mocha-surface1 rounded-lg transition-colors text-mocha-overlay0 hover:text-mocha-text opacity-0 group-hover:opacity-100"
+                    disabled={deletingProjectId === project.id}
+                    className="p-2 hover:bg-mocha-surface1 rounded-lg transition-colors text-mocha-subtext0 hover:text-mocha-text opacity-0 group-hover:opacity-100 disabled:opacity-50"
                   >
-                    <MoreVertical className="w-4 h-4" />
+                    {deletingProjectId === project.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -244,40 +247,6 @@ export default function WorkspacePage() {
         )}
       </div>
 
-      {/* Context Menu for Project Actions */}
-      {menuProjectId && (
-        <div 
-          className="fixed inset-0 z-40"
-          onClick={() => setMenuProjectId(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 rounded-xl border border-mocha-surface0 bg-mocha-base shadow-2xl p-2"
-          >
-            <p className="text-xs text-mocha-overlay0 px-3 py-2 border-b border-mocha-surface0 mb-2">
-              Project Actions
-            </p>
-            <button
-              onClick={() => {
-                const project = projects?.find(p => p.id === menuProjectId);
-                if (project) {
-                  setMenuProjectId(null);
-                  setDeleteConfirm({ id: project.id, name: project.name });
-                }
-              }}
-              disabled={deletingProjectId === menuProjectId}
-              className="flex w-full items-center gap-3 px-3 py-2.5 text-sm text-mocha-red hover:bg-mocha-red/10 rounded-lg transition-colors disabled:opacity-60"
-            >
-              {deletingProjectId === menuProjectId ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-              Delete Project
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

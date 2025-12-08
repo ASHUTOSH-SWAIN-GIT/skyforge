@@ -77,6 +77,8 @@ function CanvasInner() {
   const [codeCopySuccess, setCodeCopySuccess] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const shareTokenParam = searchParams.get("shareToken");
   const [canLoadProject, setCanLoadProject] = useState(() => !shareTokenParam);
@@ -88,6 +90,7 @@ function CanvasInner() {
   const [copySuccess, setCopySuccess] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
+  const [isAIFeatureDownOpen, setIsAIFeatureDownOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -354,6 +357,28 @@ function CanvasInner() {
     }
   }, [project, projectId, exportToData, showToast]);
 
+  // Keyboard shortcut for save (Ctrl+S or Cmd+S)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if user is typing in an input/textarea
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+
+      // Ctrl+S or Cmd+S for save
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        if (project && !isSaving) {
+          handleSave();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleSave, project, isSaving]);
+
   const handleAddTable = useCallback(() => {
     // Add table at center of viewport
     const centerX = window.innerWidth / 2 - 140;
@@ -427,6 +452,7 @@ function CanvasInner() {
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && file.name.endsWith('.sql')) {
+      setIsImportModalOpen(false);
       handleImportSQL(file);
     } else {
       showToast("Please select a valid SQL file (.sql)", "error");
@@ -435,6 +461,29 @@ function CanvasInner() {
       }
     }
   }, [handleImportSQL, showToast]);
+
+  const handleFileDrop = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+    
+    const file = event.dataTransfer.files?.[0];
+    if (file && file.name.endsWith('.sql')) {
+      setIsImportModalOpen(false);
+      handleImportSQL(file);
+    } else {
+      showToast("Please drop a valid SQL file (.sql)", "error");
+    }
+  }, [handleImportSQL, showToast]);
+
+  const handleDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  }, []);
 
   const handleExport = useCallback(async (format: "sql" | "prisma") => {
     if (!project) return;
@@ -695,7 +744,7 @@ function CanvasInner() {
                   disabled={isImporting}
                 />
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setIsImportModalOpen(true)}
                   disabled={isImporting}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-mocha-text bg-mocha-surface0/30 hover:bg-mocha-surface0/80 hover:scale-[1.02] rounded-xl transition-all duration-200 border border-mocha-surface0 shadow-sm group disabled:opacity-50"
                 >
@@ -746,7 +795,7 @@ function CanvasInner() {
             <div className="space-y-4">
               <h3 className="text-xs font-bold text-mocha-overlay0 uppercase tracking-widest pl-1">AI Assistant</h3>
               <button
-                onClick={() => setIsAIChatOpen(true)}
+                onClick={() => setIsAIFeatureDownOpen(true)}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-mocha-text bg-mocha-surface0/30 hover:bg-mocha-surface0/80 rounded-xl transition-all border border-mocha-surface0"
               >
                 <Sparkles className="w-4 h-4 text-mocha-mauve" />
@@ -1152,6 +1201,74 @@ function CanvasInner() {
         </div>
       )}
 
+      {/* Import SQL Modal */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
+              <div>
+                <p className="text-mocha-text font-semibold">Import SQL File</p>
+                <p className="text-xs text-mocha-overlay0">Upload a SQL file to import your schema</p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsImportModalOpen(false);
+                  setIsDragOver(false);
+                }}
+                className="p-1.5 rounded-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".sql"
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isImporting}
+              />
+              <div
+                onDrop={handleFileDrop}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onClick={() => fileInputRef.current?.click()}
+                className={`
+                  relative border-2 border-dashed rounded-xl p-8 cursor-pointer
+                  transition-all duration-200
+                  ${isDragOver 
+                    ? 'border-mocha-green bg-mocha-green/10' 
+                    : 'border-mocha-surface0 hover:border-mocha-green/50 hover:bg-mocha-surface0/30'
+                  }
+                  ${isImporting ? 'opacity-50 cursor-not-allowed' : ''}
+                `}
+              >
+                <div className="flex flex-col items-center justify-center gap-3 text-center">
+                  <div className={`
+                    p-3 rounded-lg transition-colors
+                    ${isDragOver 
+                      ? 'bg-mocha-green/20' 
+                      : 'bg-mocha-green/10'
+                    }
+                  `}>
+                    <Upload className={`w-6 h-6 text-mocha-green transition-transform`} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-mocha-text">
+                      {isDragOver ? 'Drop your SQL file here' : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="text-xs text-mocha-overlay0">
+                      SQL files only (.sql)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AI Chat Modal */}
       {isAIChatOpen && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 flex items-center justify-center px-4">
@@ -1215,6 +1332,49 @@ function CanvasInner() {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Feature Down Modal */}
+      {isAIFeatureDownOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
+          <div className="w-full max-w-md bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-mocha-peach" />
+                <p className="text-mocha-text font-semibold">Feature Temporarily Unavailable</p>
+              </div>
+              <button
+                onClick={() => setIsAIFeatureDownOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="p-4 rounded-full bg-mocha-peach/10">
+                  <AlertCircle className="w-8 h-8 text-mocha-peach" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-base font-medium text-mocha-text">
+                    This feature is currently down
+                  </p>
+                  <p className="text-sm text-mocha-overlay0">
+                    Will be up again shortly
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-mocha-surface0 flex justify-end">
+              <button
+                onClick={() => setIsAIFeatureDownOpen(false)}
+                className="px-4 py-2 rounded-lg text-sm font-medium text-mocha-crust bg-mocha-mauve hover:bg-mocha-mauve/90 transition-colors"
+              >
+                OK
+              </button>
             </div>
           </div>
         </div>
