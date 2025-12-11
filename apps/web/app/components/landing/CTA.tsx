@@ -14,8 +14,7 @@ export function CTA() {
           </h2>
 
           <p className="text-lg text-mocha-subtext0 mb-10 max-w-xl mx-auto font-light">
-            Join thousands of developers who are building better databases faster with Skyforge.
-            Open source and free to get started.
+            Build better databases faster with Skyforge. Open source and free to get started.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">

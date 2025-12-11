@@ -2,11 +2,13 @@
 
 import { LazyMotion, domAnimation, m } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowRight, Play, Database, Layers, Github } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Play, Database, Layers, Github, X } from 'lucide-react';
 import { useUser } from '../../../hooks/useUser';
 
 export function Hero() {
   const { user, isLoading } = useUser();
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-mocha-crust">
 
@@ -79,14 +81,15 @@ export function Hero() {
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 </Link>
-                <Link href="https://drive.google.com/drive/u/1/folders/1hzpjAGAwp9zIQYRe5Wt8pBkX1W3U7eHW" target="_blank" rel="noopener noreferrer">
-                  <button className="group flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-mocha-text bg-mocha-surface0 border border-mocha-surface1 hover:bg-mocha-surface1 transition-all">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-mocha-surface1 group-hover:bg-mocha-surface2 transition-colors">
-                      <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
-                    </div>
-                    Watch Demo
-                  </button>
-                </Link>
+                <button
+                  onClick={() => setIsDemoOpen(true)}
+                  className="group flex items-center gap-3 px-8 py-4 rounded-xl font-semibold text-mocha-text bg-mocha-surface0 border border-mocha-surface1 hover:bg-mocha-surface1 transition-all"
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-mocha-surface1 group-hover:bg-mocha-surface2 transition-colors">
+                    <Play className="w-4 h-4 ml-0.5" fill="currentColor" />
+                  </div>
+                  Watch Demo
+                </button>
               </>
             )}
           </m.div>
@@ -223,6 +226,35 @@ export function Hero() {
           </div>
       </div>
       </LazyMotion>
+
+      {/* Demo Modal */}
+      {isDemoOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          onClick={() => setIsDemoOpen(false)}
+        >
+          <div
+            className="relative w-full max-w-4xl bg-mocha-crust border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setIsDemoOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-lg text-mocha-overlay0 hover:text-mocha-text hover:bg-mocha-surface0 transition-colors z-10"
+              aria-label="Close demo video"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <video
+              src="/demo.mp4"
+              controls
+              autoPlay
+              className="w-full h-full bg-black"
+            >
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
