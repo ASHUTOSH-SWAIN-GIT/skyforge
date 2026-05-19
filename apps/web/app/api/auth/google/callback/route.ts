@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   let accessToken: string;
   let userInfo: { email: string; name: string; picture?: string };
   try {
-    accessToken = await exchangeCodeForToken(code);
+    accessToken = await exchangeCodeForToken(code, req);
     userInfo = await fetchGoogleUserInfo(accessToken);
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   const jwt = await generateJWT(user.id);
   const isProd = process.env.NODE_ENV === "production";
-  const target = `${frontendUrl()}/dashboard`;
+  const target = `${frontendUrl(req)}/dashboard`;
 
   const res = NextResponse.redirect(target);
   res.cookies.set(AUTH_COOKIE, jwt, {

@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { buildAuthUrl, generateState } from "@/lib/auth/google";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const state = generateState();
-  const res = NextResponse.redirect(buildAuthUrl(state));
+  const res = NextResponse.redirect(buildAuthUrl(state, req));
   res.cookies.set("oauth_state", state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

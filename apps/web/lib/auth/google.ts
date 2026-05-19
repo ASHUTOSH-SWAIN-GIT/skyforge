@@ -4,16 +4,28 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo";
 
-export function backendBaseUrl(): string {
-  return process.env.BACKEND_PUBLIC_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+function originFromRequest(req: Request): string {
+  const fwdProto = req.headers.get("x-forwarded-proto");
+  const fwdHost = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (fwdProto && fwdHost) return `${fwdProto}://${fwdHost}`;
+  return new URL(req.url).origin;
 }
 
-export function frontendUrl(): string {
-  return process.env.FRONTEND_URL ?? "http://localhost:3000";
+export function backendBaseUrl(req?: Request): string {
+  if (process.env.BACKEND_PUBLIC_URL) return process.env.BACKEND_PUBLIC_URL;
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (req) return originFromRequest(req);
+  return "http://localhost:3000";
 }
 
-export function googleRedirectUri(): string {
-  return `${backendBaseUrl()}/api/auth/google/callback`;
+export function frontendUrl(req?: Request): string {
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  if (req) return originFromRequest(req);
+  return "http://localhost:3000";
+}
+
+export function googleRedirectUri(req?: Request): string {
+  return `${backendBaseUrl(req)}/api/auth/google/callback`;
 }
 
 function clientId(): string {
@@ -28,10 +40,10 @@ function clientSecret(): string {
   return s;
 }
 
-export function buildAuthUrl(state: string): string {
+export function buildAuthUrl(state: string, req?: Request): string {
   const params = new URLSearchParams({
     client_id: clientId(),
-    redirect_uri: googleRedirectUri(),
+    redirect_uri: googleRedirectUri(req),
     response_type: "code",
     scope: [
       "https://www.googleapis.com/auth/userinfo.email",
@@ -44,7 +56,7 @@ export function buildAuthUrl(state: string): string {
   return `${GOOGLE_AUTH_URL}?${params.toString()}`;
 }
 
-export async function exchangeCodeForToken(code: string): Promise<string> {
+export async function exchangeCodeForToken(code: string, req?: Request): Promise<string> {
   const res = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -52,7 +64,7 @@ export async function exchangeCodeForToken(code: string): Promise<string> {
       code,
       client_id: clientId(),
       client_secret: clientSecret(),
-      redirect_uri: googleRedirectUri(),
+      redirect_uri: googleRedirectUri(req),
       grant_type: "authorization_code",
     }),
   });
