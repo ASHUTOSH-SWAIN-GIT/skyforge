@@ -79,6 +79,7 @@ function attach(ws: WebSocket, roomKey: string) {
 
   ws.on("message", (data, isBinary) => {
     for (const client of room) {
+      if (client === ws) continue;
       if (client.readyState !== ws.OPEN) continue;
       try {
         client.send(data, { binary: isBinary });

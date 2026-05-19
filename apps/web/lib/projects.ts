@@ -16,21 +16,6 @@ export async function createProject(data: { name: string; description: string; c
     });
 }
 
-export async function exportProjectSQL(projectId: string) {
-    const res = await fetch(`/api/projects/${projectId}/export`, {
-        method: "GET",
-        credentials: "include",
-    });
-    const text = await res.text();
-    if (!res.ok) {
-        if (res.status === 401) {
-            window.location.href = "/login";
-        }
-        throw new Error(text || "Failed to export SQL");
-    }
-    return text;
-}
-
 export async function exportProjectPrisma(projectId: string) {
     const res = await fetch(`/api/projects/${projectId}/export/prisma`, {
         method: "GET",

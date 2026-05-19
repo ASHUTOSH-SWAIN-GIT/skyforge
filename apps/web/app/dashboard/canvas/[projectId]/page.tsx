@@ -17,7 +17,6 @@ import "reactflow/dist/style.css";
 import {
   getProject,
   updateProject,
-  exportProjectSQL,
   exportProjectPrisma,
   importSQL,
   getProjectShareLink,
@@ -36,7 +35,6 @@ import {
   Maximize2,
   Code,
   ChevronLeft,
-  ChevronRight,
   Save,
   Upload,
   Share2,
@@ -72,8 +70,6 @@ function CanvasInner() {
   const [isSaving, setIsSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [codePreview, setCodePreview] = useState<string | null>(null);
-  const [exportFormat, setExportFormat] = useState<"sql" | "prisma">("sql");
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [codeCopySuccess, setCodeCopySuccess] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
@@ -492,21 +488,16 @@ function CanvasInner() {
     setIsDragOver(false);
   }, []);
 
-  const handleExport = useCallback(async (format: "sql" | "prisma") => {
+  const handleExport = useCallback(async () => {
     if (!project) return;
     try {
       setIsExporting(true);
-      setExportFormat(format);
       setCodePreview(null);
-      setIsExportModalOpen(false);
-      
-      const code = format === "sql" 
-          ? await exportProjectSQL(project.id.toString())
-        : await exportProjectPrisma(project.id.toString());
-      
+
+      const code = await exportProjectPrisma(project.id.toString());
       setCodePreview(code);
     } catch {
-      showToast(`Failed to generate ${format === "sql" ? "SQL" : "Prisma schema"}. Please try again.`, "error");
+      showToast("Failed to generate Prisma schema. Please try again.", "error");
       setCodePreview(null);
     } finally {
       setIsExporting(false);
@@ -825,7 +816,7 @@ function CanvasInner() {
                 </button>
                 
                   <button
-                  onClick={() => setIsExportModalOpen(true)}
+                  onClick={handleExport}
                     disabled={isExporting}
                     className="w-full flex items-center justify-between px-4 py-3 text-sm text-mocha-subtext0 hover:text-mocha-text bg-mocha-surface0/20 hover:bg-mocha-surface0/50 rounded-xl transition-all border border-transparent hover:border-mocha-surface0 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -993,67 +984,6 @@ function CanvasInner() {
         </ReactFlow>
       </div>
 
-      {/* Export Options Modal */}
-      {isExportModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
-          <div className="w-full max-w-md bg-mocha-mantle border border-mocha-surface0 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
-              <div>
-                <p className="text-mocha-text font-semibold">Export Schema</p>
-                <p className="text-xs text-mocha-overlay0">Choose your preferred format</p>
-              </div>
-              <button
-                onClick={() => setIsExportModalOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-mocha-surface0 transition-colors text-mocha-subtext0 hover:text-mocha-text"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-6 space-y-3">
-              {/* SQL Option */}
-              <button
-                onClick={() => handleExport("sql")}
-                disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#336791]/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#336791] to-[#205080] flex items-center justify-center shadow-lg">
-                  <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
-                    <ellipse cx="12" cy="6" rx="8" ry="3" stroke="white" strokeWidth="1.5" fill="none"/>
-                    <path d="M4 6v6c0 1.657 3.582 3 8 3s8-1.343 8-3V6" stroke="white" strokeWidth="1.5"/>
-                    <path d="M4 12v6c0 1.657 3.582 3 8 3s8-1.343 8-3v-6" stroke="white" strokeWidth="1.5"/>
-                    <ellipse cx="12" cy="12" rx="8" ry="3" stroke="white" strokeWidth="1.5" fill="none" strokeDasharray="2 2" opacity="0.5"/>
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-mocha-text group-hover:text-[#336791] transition-colors">PostgreSQL</p>
-                  <p className="text-xs text-mocha-overlay0">Raw SQL schema with CREATE TABLE statements</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-[#336791] transition-colors" />
-              </button>
-
-              {/* Prisma Option */}
-              <button
-                onClick={() => handleExport("prisma")}
-                disabled={isExporting}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border border-mocha-surface0 bg-mocha-base/50 hover:bg-mocha-surface0/50 hover:border-[#2D3748]/50 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#2D3748] to-[#1A202C] flex items-center justify-center shadow-lg">
-                  <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
-                    <path d="M21.807 18.285L13.553.756a1.324 1.324 0 00-1.129-.754 1.31 1.31 0 00-1.206.626L.258 17.617a1.33 1.33 0 00.076 1.484l5.55 6.446a1.33 1.33 0 001.011.449h12.762a1.33 1.33 0 001.213-.788l1.015-2.422a1.33 1.33 0 00-.078-1.501z" fill="#5A67D8"/>
-                    <path d="M21.807 18.285L13.553.756a1.324 1.324 0 00-1.129-.754L5.885 19.562l5.55 6.446a1.33 1.33 0 001.011.449h7.211a1.33 1.33 0 001.213-.788l1.015-2.422a1.33 1.33 0 00-.078-1.501z" fill="#4C51BF"/>
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-semibold text-mocha-text group-hover:text-[#5A67D8] transition-colors">Prisma</p>
-                  <p className="text-xs text-mocha-overlay0">schema.prisma with models and relations</p>
-                </div>
-                <ChevronRight className="w-5 h-5 text-mocha-overlay0 group-hover:text-[#5A67D8] transition-colors" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Export Loading Modal */}
       {isExporting && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 flex items-center justify-center px-4">
@@ -1067,7 +997,7 @@ function CanvasInner() {
               </div>
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-semibold text-mocha-text">
-                  Generating {exportFormat === "sql" ? "PostgreSQL" : "Prisma"} Schema
+                  Generating Prisma Schema
                 </h3>
                 <p className="text-sm text-mocha-subtext0">
                   Processing your schema...
@@ -1085,11 +1015,9 @@ function CanvasInner() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-mocha-surface0">
               <div>
                 <p className="text-sm uppercase tracking-wider text-mocha-subtext0">
-                  {exportFormat === "sql" ? "SQL Export" : "Prisma Export"}
+                  Prisma Export
                 </p>
-                <p className="text-mocha-text font-semibold">
-                  {exportFormat === "sql" ? "PostgreSQL Schema" : "schema.prisma"}
-                </p>
+                <p className="text-mocha-text font-semibold">schema.prisma</p>
               </div>
               <div className="flex items-center gap-2">
               <button
