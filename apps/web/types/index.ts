@@ -9,7 +9,7 @@ export interface User {
 
 export interface Project {
     id: string;
-    user_id: string;
+    userId: string;
     name: string;
     description: { String: string; Valid: boolean };
     data: any;

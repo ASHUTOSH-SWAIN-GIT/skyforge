@@ -13,6 +13,7 @@ export interface CollaboratorPresence {
   name: string;
   color: string;
   avatarUrl?: string | null;
+  email?: string | null;
 }
 
 interface UseCanvasCollaborationOptions {
@@ -22,6 +23,7 @@ interface UseCanvasCollaborationOptions {
     id: string;
     name: string;
     avatarUrl?: string | null;
+    email?: string | null;
   };
 }
 
@@ -70,6 +72,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
   const userId = options.user?.id ?? null;
   const userName = options.user?.name ?? null;
   const userAvatarUrl = options.user?.avatarUrl ?? null;
+  const userEmail = options.user?.email ?? null;
 
   useEffect(() => {
     if (!options.enabled || !options.roomKey) {
@@ -98,6 +101,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
           name: userName,
           color: getColorForUser(userId),
           avatarUrl: userAvatarUrl ?? null,
+          email: userEmail ?? null,
         });
         awarenessSetRef.current = true;
       }
@@ -110,6 +114,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
           name: userName,
           color: getColorForUser(userId),
           avatarUrl: userAvatarUrl ?? null,
+          email: userEmail ?? null,
         });
       }
     };
@@ -128,6 +133,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
               name: userData.name,
               color: userData.color || getColorForUser(userData.id),
               avatarUrl: userData.avatarUrl ?? null,
+              email: userData.email ?? null,
             });
           }
         }
@@ -139,6 +145,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
           name: userName,
           color: getColorForUser(userId),
           avatarUrl: userAvatarUrl ?? null,
+          email: userEmail ?? null,
         });
       }
       
@@ -302,7 +309,7 @@ export function useCanvasCollaboration(options: UseCanvasCollaborationOptions) {
       awarenessSetRef.current = false;
       isConnectedRef.current = false;
     };
-  }, [options.enabled, options.roomKey, userId, userName, userAvatarUrl, setNodes, setEdges]);
+  }, [options.enabled, options.roomKey, userId, userName, userAvatarUrl, userEmail, setNodes, setEdges]);
 
   return { status, peers };
 }

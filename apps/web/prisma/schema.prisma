@@ -1,0 +1,106 @@
+// Prisma schema for Skyforge — Neon Postgres
+// Mirrors the original Go/sqlc schema 1:1.
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique
+  name      String
+  avatarUrl String?  @map("avatar_url")
+  provider  String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  projects            Project[]
+  collaborations      ProjectCollaborator[]
+  createdShareLinks   ProjectShareLink[]    @relation("ShareLinkCreator")
+  databaseConnections DatabaseConnection[]
+
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  name        String
+  description String?
+  data        Json     @default("{}")
+  isPublic    Boolean  @default(false) @map("is_public")
+  lastSavedAt DateTime @default(now()) @map("last_saved_at") @db.Timestamp(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  collaborators       ProjectCollaborator[]
+  shareLinks          ProjectShareLink[]
+  databaseConnections DatabaseConnection[]
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model ProjectCollaborator {
+  id        String   @id @default(uuid()) @db.Uuid
+  projectId String   @map("project_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @default("editor")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+  @@map("project_collaborators")
+}
+
+model ProjectShareLink {
+  id         String    @id @default(uuid()) @db.Uuid
+  projectId  String    @map("project_id") @db.Uuid
+  token      String    @unique
+  roomKey    String    @unique @map("room_key")
+  createdBy  String    @map("created_by") @db.Uuid
+  expiresAt  DateTime? @map("expires_at") @db.Timestamp(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamp(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamp(6)
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamp(6)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator User    @relation("ShareLinkCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@map("project_share_links")
+}
+
+model DatabaseConnection {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  projectId    String?  @map("project_id") @db.Uuid
+  name         String
+  host         String
+  port         Int      @default(5432)
+  databaseName String   @map("database_name")
+  username     String
+  password     String
+  dbType       String   @default("postgres") @map("db_type")
+  sslMode      String   @default("require") @map("ssl_mode")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([projectId])
+  @@map("database_connections")
+}

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
-import { aiAvailable, generatePrismaFromCanvas } from "@/lib/ai/service";
+import { aiAvailable, generateSQLFromCanvas } from "@/lib/ai/service";
 import { cache } from "@/lib/cache";
-import { generatePrisma } from "@/lib/compiler/prisma";
+import { generateSQL } from "@/lib/compiler/sql";
 import {
   getProjectForUser,
   normalizeCanvasJSON,
@@ -27,7 +27,7 @@ export const GET = withAuth<{ projectId: string }>(async (_req, { userId, params
 
   const json = JSON.stringify(data);
   const hash = createHash("sha256").update(json).digest("hex");
-  const cacheKey = `export:${project.id}:prisma:${hash}`;
+  const cacheKey = `export:${project.id}:sql:${hash}`;
 
   const cached = cache.get<string>(cacheKey);
   if (cached)
@@ -35,19 +35,19 @@ export const GET = withAuth<{ projectId: string }>(async (_req, { userId, params
       headers: { "Content-Type": "text/plain", "X-Cache": "HIT" },
     });
 
-  let schema: string;
+  let sql: string;
   if (aiAvailable()) {
     try {
-      schema = await generatePrismaFromCanvas(json);
+      sql = await generateSQLFromCanvas(json);
     } catch {
-      schema = generatePrisma(json);
+      sql = generateSQL(json);
     }
   } else {
-    schema = generatePrisma(json);
+    sql = generateSQL(json);
   }
 
-  cache.set(cacheKey, schema, EXPORT_TTL);
-  return new NextResponse(schema, {
+  cache.set(cacheKey, sql, EXPORT_TTL);
+  return new NextResponse(sql, {
     headers: { "Content-Type": "text/plain", "X-Cache": "MISS" },
   });
 });

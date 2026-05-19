@@ -1,48 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cache } from "@/lib/cache";
+import { UnauthorizedError, getUserIdFromRequest } from "@/lib/auth/session";
+import { prisma } from "@/lib/db";
 
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL ?? "http://localhost:8080";
+const USER_CACHE_TTL = 5 * 60 * 1000;
 
-export async function GET(request: NextRequest) {
-  const targetUrl = `${BACKEND_BASE_URL}/auth/me`;
-
-  const headers: Record<string, string> = {};
-  
-  // Get cookies from Next.js request object
-  const cookies = request.cookies.getAll();
-  if (cookies.length > 0) {
-    // Format cookies as a cookie header string
-    const cookieString = cookies.map(c => `${c.name}=${c.value}`).join("; ");
-    headers["cookie"] = cookieString;
-  } else {
-    // Fallback to raw header if Next.js cookies aren't available
-    const cookie = request.headers.get("cookie");
-    if (cookie) {
-      headers["cookie"] = cookie;
-    }
+export async function GET(req: NextRequest) {
+  let userId: string;
+  try {
+    userId = await getUserIdFromRequest(req);
+  } catch (err) {
+    if (err instanceof UnauthorizedError)
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    throw err;
   }
 
-  const response = await fetch(targetUrl, {
-    method: "GET",
-    headers,
-    cache: "no-store",
-  });
-
-  const responseBody = await response.text();
-  const nextResponse = new NextResponse(responseBody, { status: response.status });
-  
-  const responseType = response.headers.get("content-type");
-  if (responseType) {
-    nextResponse.headers.set("content-type", responseType);
+  const cacheKey = `user:${userId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, { headers: { "X-Cache": "HIT" } });
   }
 
-  // Forward all Set-Cookie headers from backend to frontend
-  // This allows cookies set by backend to be accessible on frontend domain
-  response.headers.forEach((value, key) => {
-    if (key.toLowerCase() === "set-cookie") {
-      nextResponse.headers.append("set-cookie", value);
-    }
-  });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return NextResponse.json({ error: "user not found" }, { status: 404 });
 
-  return nextResponse;
+  cache.set(cacheKey, user, USER_CACHE_TTL);
+  return NextResponse.json(user, { headers: { "X-Cache": "MISS" } });
 }
-

@@ -5,7 +5,6 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
   useReactFlow,
   ReactFlowProvider,
   NodeChange,
@@ -57,6 +56,7 @@ import { useCanvasStore } from "../store";
 import TableNode from "../TableNode";
 import { useCanvasCollaboration, CollaborationStatus } from "../useCanvasCollaboration";
 import { useUser } from "../../../../hooks/useUser";
+import { useGravatars } from "../../../../lib/avatar";
 
 const nodeTypes = {
   tableNode: TableNode,
@@ -142,9 +142,16 @@ function CanvasInner() {
   const { status: collaborationStatus, peers } = useCanvasCollaboration({
     roomKey: collabRoomKey,
     enabled: Boolean(collabRoomKey),
-    user: user ? { id: user.id, name: user.name, avatarUrl: userAvatarUrl } : undefined,
+    user: user ? { id: user.id, name: user.name, avatarUrl: userAvatarUrl, email: user.email } : undefined,
   });
-  const isOwner = user && project ? project.user_id === user.id : false;
+  const gravatarMap = useGravatars([
+    user?.email,
+    ...peers.map((p) => p.email),
+    ...projectMembers.map((m) => m.email),
+  ]);
+  const getGravatar = (email?: string | null) =>
+    email ? gravatarMap[email.trim().toLowerCase()] : undefined;
+  const isOwner = user && project ? project.userId === user.id : false;
   const shareUrl = useMemo(() => {
     if (!shareInfo) return "";
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -338,7 +345,7 @@ function CanvasInner() {
     return () => {
       cancelled = true;
     };
-  }, [projectId, canLoadProject]);
+  }, [projectId, canLoadProject, peers.map((p) => p.id).sort().join(",")]);
 
   const handleSave = useCallback(async () => {
     if (!project) return;
@@ -647,7 +654,8 @@ function CanvasInner() {
         {displayedPeers.length > 0 && (
           <div className="flex -space-x-2">
             {displayedPeers.map((peer) => {
-              const hasAvatar = peer.avatarUrl && peer.avatarUrl.trim() !== "";
+              const peerGravatar = getGravatar(peer.email);
+              const hasAvatar = Boolean(peerGravatar);
               return (
                 <div
                   key={peer.id}
@@ -656,7 +664,7 @@ function CanvasInner() {
                 >
                   {hasAvatar ? (
                     <img
-                      src={peer.avatarUrl!}
+                      src={peerGravatar!}
                       alt={peer.name || "Collaborator"}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -851,8 +859,9 @@ function CanvasInner() {
                   <p className="text-xs text-mocha-overlay0 px-3 py-2">No members yet</p>
                 ) : (
                   projectMembers.map((member) => {
-                    const hasAvatar = member.avatar_url && member.avatar_url.trim() !== "";
-                    const memberIsOwner = project && member.id === project.user_id;
+                    const memberGravatar = getGravatar(member.email);
+                    const hasAvatar = Boolean(memberGravatar);
+                    const memberIsOwner = project && member.id === project.userId;
                     return (
                       <div
                         key={member.id}
@@ -861,7 +870,7 @@ function CanvasInner() {
                         <div className="relative">
                           {hasAvatar ? (
                             <img
-                              src={member.avatar_url!}
+                              src={memberGravatar!}
                               alt={member.name}
                               className="w-8 h-8 rounded-full object-cover border border-mocha-surface0"
                               onError={(e) => {
@@ -980,12 +989,6 @@ function CanvasInner() {
           <Controls 
             className="!bg-mocha-mantle/80 !border-mocha-surface0 !rounded-xl !shadow-lg backdrop-blur-sm m-4 !p-1" 
             showInteractive={false}
-          />
-          <MiniMap
-            className="!bg-mocha-mantle/80 !border-mocha-surface0 !rounded-xl !shadow-lg backdrop-blur-sm m-4"
-            nodeColor="#cba6f7"
-            maskColor="#1e1e2e"
-            style={{ opacity: 0.7 }}
           />
         </ReactFlow>
       </div>

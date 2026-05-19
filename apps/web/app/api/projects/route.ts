@@ -1,84 +1,59 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/db";
+import { withAuth } from "@/lib/projects/handler";
 
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL ?? "http://localhost:8080";
-
-export async function GET(request: NextRequest) {
-  const targetUrl = `${BACKEND_BASE_URL}/projects`;
-
-  const headers: Record<string, string> = {};
-  
-  // Get cookies from Next.js request object
-  const cookies = request.cookies.getAll();
-  if (cookies.length > 0) {
-    // Format cookies as a cookie header string
-    const cookieString = cookies.map(c => `${c.name}=${c.value}`).join("; ");
-    headers["cookie"] = cookieString;
-  } else {
-    // Fallback to raw header if Next.js cookies aren't available
-    const cookie = request.headers.get("cookie");
-    if (cookie) {
-      headers["cookie"] = cookie;
-    }
-  }
-
-  const response = await fetch(targetUrl, {
-    method: "GET",
-    headers,
-    cache: "no-store",
+export const GET = withAuth(async (_req, { userId }) => {
+  const owned = await prisma.project.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      isPublic: true,
+      lastSavedAt: true,
+      createdAt: true,
+    },
+  });
+  const collab = await prisma.projectCollaborator.findMany({
+    where: { userId },
+    select: {
+      role: true,
+      project: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          isPublic: true,
+          lastSavedAt: true,
+          createdAt: true,
+        },
+      },
+    },
   });
 
-  const responseBody = await response.text();
-  const nextResponse = new NextResponse(responseBody, { status: response.status });
-  
-  const responseType = response.headers.get("content-type");
-  if (responseType) {
-    nextResponse.headers.set("content-type", responseType);
-  }
+  const all = [
+    ...owned.map((p) => ({ ...p, role: "owner" })),
+    ...collab.map(({ role, project }) => ({ ...project, role })),
+  ].sort((a, b) => b.lastSavedAt.getTime() - a.lastSavedAt.getTime());
 
-  return nextResponse;
-}
+  return NextResponse.json(all);
+});
 
-export async function POST(request: NextRequest) {
-  const targetUrl = `${BACKEND_BASE_URL}/projects`;
+export const POST = withAuth(async (req, { userId }) => {
+  const body = (await req.json().catch(() => ({}))) as {
+    name?: string;
+    description?: string;
+  };
+  if (!body.name) return NextResponse.json({ error: "Project name is required" }, { status: 400 });
 
-  const headers: Record<string, string> = {};
-  
-  // Get cookies from Next.js request object
-  const cookies = request.cookies.getAll();
-  if (cookies.length > 0) {
-    // Format cookies as a cookie header string
-    const cookieString = cookies.map(c => `${c.name}=${c.value}`).join("; ");
-    headers["cookie"] = cookieString;
-  } else {
-    // Fallback to raw header if Next.js cookies aren't available
-    const cookie = request.headers.get("cookie");
-    if (cookie) {
-      headers["cookie"] = cookie;
-    }
-  }
-
-  const contentType = request.headers.get("content-type");
-  if (contentType) {
-    headers["content-type"] = contentType;
-  }
-
-  const body = await request.text();
-
-  const response = await fetch(targetUrl, {
-    method: "POST",
-    headers,
-    body,
-    cache: "no-store",
+  const project = await prisma.project.create({
+    data: {
+      userId,
+      name: body.name,
+      description: body.description || null,
+      data: {} as Prisma.InputJsonValue,
+    },
   });
-
-  const responseBody = await response.text();
-  const nextResponse = new NextResponse(responseBody, { status: response.status });
-  
-  const responseType = response.headers.get("content-type");
-  if (responseType) {
-    nextResponse.headers.set("content-type", responseType);
-  }
-
-  return nextResponse;
-}
-
+  return NextResponse.json(project);
+});

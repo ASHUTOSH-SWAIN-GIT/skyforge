@@ -1,5 +1,3 @@
-const BACKEND_URL = process.env.NEXT_PUBLIC_SERVER_URL || "http://localhost:8080";
-
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full font-sans bg-mocha-base">
@@ -25,7 +23,7 @@ export default function LoginPage() {
           <h2 className="text-2xl font-semibold mb-8 text-center text-mocha-text">Welcome to Skyforge</h2>
 
           <a 
-            href={`${BACKEND_URL}/auth/google/login`}
+            href="/api/auth/google/login"
             className="flex items-center justify-center w-full p-3 gap-3 border border-mocha-surface0 rounded-xl bg-mocha-surface0 text-mocha-text text-base font-medium transition-all hover:bg-mocha-surface1 hover:border-mocha-mauve/50 hover:-translate-y-px active:translate-y-0 shadow-sm"
           >
             <GoogleIcon />

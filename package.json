@@ -1,5 +1,5 @@
 {
-  "name": "DbAlly",
+  "name": "skyforge",
   "private": true,
   "pnpm": {
     "overrides": {
@@ -7,15 +7,21 @@
     }
   },
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "dev": "pnpm -r --parallel --filter web --filter ws dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:ws": "pnpm --filter ws dev",
+    "build": "pnpm --filter web build && pnpm --filter ws build",
+    "start": "pnpm --filter web start",
+    "lint": "pnpm -r --parallel lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "check-types": "pnpm -r --parallel check-types",
+    "db:generate": "pnpm --filter web exec prisma generate",
+    "db:migrate": "pnpm --filter web exec prisma migrate dev",
+    "db:deploy": "pnpm --filter web exec prisma migrate deploy",
+    "db:studio": "pnpm --filter web exec prisma studio"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
-    "turbo": "^2.6.1",
     "typescript": "5.9.2"
   },
   "packageManager": "pnpm@9.0.0",

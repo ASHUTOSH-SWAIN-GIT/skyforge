@@ -123,6 +123,47 @@ Skyforge is meant to replace that friction with a single collaborative tool.
 
 ---
 
+## Tech Stack
+
+- **Monorepo**: pnpm workspaces (no Turborepo).
+- **Web** (`apps/web`): Next.js 16 (App Router), React 19, Tailwind v4, Reactflow, Yjs.
+- **API**: Next.js route handlers in `apps/web/app/api/*` (no separate backend service).
+- **Database**: Neon Postgres via Prisma (`@prisma/adapter-neon` + `@neondatabase/serverless`).
+- **Auth**: Google OAuth → JWT in HttpOnly cookie (signed with `jose`).
+- **AI**: Optional Gemini 2.0 Flash (`@google/generative-ai`) for SQL/Prisma export and prompt-to-schema.
+- **Collaboration WS** (`apps/ws`): standalone Node `ws` server hosting Yjs rooms (Vercel functions can't hold WebSockets).
+
+## Local Setup
+
+```bash
+pnpm install
+
+# 1. Configure env
+cp apps/web/.env.example apps/web/.env
+cp apps/ws/.env.example apps/ws/.env
+# Fill in DATABASE_URL (Neon), JWT_SECRET, GOOGLE_CLIENT_ID/SECRET, GEMINI_API_KEY
+
+# 2. Apply Prisma migrations to Neon
+pnpm db:deploy
+
+# 3. Run web + ws together
+pnpm dev
+```
+
+The web app runs on `http://localhost:3000` and the collaboration WS on `ws://localhost:8080`.
+
+## Scripts
+
+| Script             | What it does                                          |
+| ------------------ | ----------------------------------------------------- |
+| `pnpm dev`         | Run `web` and `ws` in parallel                        |
+| `pnpm dev:web`     | Run only the Next.js app                              |
+| `pnpm dev:ws`      | Run only the collaboration WebSocket server          |
+| `pnpm build`       | Build both apps                                       |
+| `pnpm db:migrate`  | Create + apply a new Prisma migration (dev)           |
+| `pnpm db:deploy`   | Apply pending migrations (prod / CI)                  |
+| `pnpm db:studio`   | Open Prisma Studio                                    |
+
 ## Status
 
 Skyforge is an evolving project. The core experience—visual design, collaboration, and export—is in place, and the goal is to keep refining:

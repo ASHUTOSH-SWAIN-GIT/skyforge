@@ -1,48 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { aiAvailable, generateTablesFromPrompt } from "@/lib/ai/service";
+import { getProjectForUser, projectAccessErrorResponse } from "@/lib/projects/access";
+import { withAuth } from "@/lib/projects/handler";
 
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL ?? "http://localhost:8080";
-
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ projectId: string }> }
-) {
-  const { projectId } = await context.params;
-  const targetUrl = `${BACKEND_BASE_URL}/projects/${projectId}/ai/generate-tables`;
-
-  const headers: Record<string, string> = {};
-  
-  // Get cookies from Next.js request object
-  const cookies = request.cookies.getAll();
-  if (cookies.length > 0) {
-    // Format cookies as a cookie header string
-    const cookieString = cookies.map(c => `${c.name}=${c.value}`).join("; ");
-    headers["cookie"] = cookieString;
-  } else {
-    // Fallback to raw header if Next.js cookies aren't available
-    const cookie = request.headers.get("cookie");
-    if (cookie) {
-      headers["cookie"] = cookie;
-    }
-  }
-  headers["content-type"] = "application/json";
-
-  const body = await request.text();
-
-  const response = await fetch(targetUrl, {
-    method: "POST",
-    headers,
-    body,
-    cache: "no-store",
-  });
-
-  const responseBody = await response.text();
-  const nextResponse = new NextResponse(responseBody, { status: response.status });
-  
-  const responseType = response.headers.get("content-type");
-  if (responseType) {
-    nextResponse.headers.set("content-type", responseType);
+export const POST = withAuth<{ projectId: string }>(async (req, { userId, params }) => {
+  try {
+    await getProjectForUser(params.projectId, userId);
+  } catch (err) {
+    return projectAccessErrorResponse(err);
   }
 
-  return nextResponse;
-}
+  if (!aiAvailable()) {
+    return NextResponse.json(
+      { error: "AI Service not configured (Missing API Key)" },
+      { status: 503 },
+    );
+  }
 
+  const body = (await req.json().catch(() => ({}))) as { prompt?: string };
+  const prompt = (body.prompt ?? "").trim();
+  if (!prompt) return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
+
+  try {
+    const canvas = await generateTablesFromPrompt(prompt);
+    return NextResponse.json(canvas);
+  } catch (err) {
+    return NextResponse.json(
+      { error: `AI Generation failed: ${(err as Error).message}` },
+      { status: 500 },
+    );
+  }
+});

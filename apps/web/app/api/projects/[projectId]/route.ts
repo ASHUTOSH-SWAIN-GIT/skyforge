@@ -1,76 +1,70 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
+import { cache } from "@/lib/cache";
+import { prisma } from "@/lib/db";
+import {
+  getProjectForUser,
+  normalizeCanvasJSON,
+  projectAccessErrorResponse,
+} from "@/lib/projects/access";
+import { withAuth } from "@/lib/projects/handler";
 
-const BACKEND_BASE_URL = process.env.BACKEND_BASE_URL ?? "http://localhost:8080";
+export const GET = withAuth<{ projectId: string }>(async (_req, { userId, params }) => {
+  try {
+    const project = await getProjectForUser(params.projectId, userId);
+    return NextResponse.json(project);
+  } catch (err) {
+    return projectAccessErrorResponse(err);
+  }
+});
 
-async function forwardRequest(
-  request: NextRequest,
-  params: { projectId: string },
-  method: "GET" | "PUT" | "DELETE"
-) {
-  const targetUrl = `${BACKEND_BASE_URL}/projects/${params.projectId}`;
-
-  const headers: Record<string, string> = {};
-  
-  // Get cookies from Next.js request object
-  const cookies = request.cookies.getAll();
-  if (cookies.length > 0) {
-    // Format cookies as a cookie header string
-    const cookieString = cookies.map(c => `${c.name}=${c.value}`).join("; ");
-    headers["cookie"] = cookieString;
-  } else {
-    // Fallback to raw header if Next.js cookies aren't available
-  const cookie = request.headers.get("cookie");
-  if (cookie) {
-    headers["cookie"] = cookie;
-    }
+export const PUT = withAuth<{ projectId: string }>(async (req, { userId, params }) => {
+  const { projectId } = params;
+  let body: { data?: unknown };
+  try {
+    body = (await req.json()) as { data?: unknown };
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  if (method === "PUT") {
-    const contentType = request.headers.get("content-type");
-    if (contentType) {
-      headers["content-type"] = contentType;
-    }
+  let cleanData: unknown;
+  try {
+    cleanData = normalizeCanvasJSON(body.data);
+  } catch {
+    return NextResponse.json({ error: "Invalid canvas data" }, { status: 400 });
   }
 
-  const init: RequestInit = {
-    method,
-    headers,
-    cache: "no-store",
-  };
-
-  if (method === "PUT") {
-    init.body = await request.text();
+  try {
+    await getProjectForUser(projectId, userId);
+  } catch (err) {
+    return projectAccessErrorResponse(err);
   }
 
-  const response = await fetch(targetUrl, init);
+  const project = await prisma.project.update({
+    where: { id: projectId },
+    data: {
+      data: (cleanData ?? {}) as Prisma.InputJsonValue,
+      lastSavedAt: new Date(),
+    },
+  });
 
-  if (response.status === 204) {
-    return new NextResponse(null, { status: response.status });
+  cache.deletePrefix(`export:${projectId}:`);
+  return NextResponse.json(project);
+});
+
+export const DELETE = withAuth<{ projectId: string }>(async (_req, { userId, params }) => {
+  let project;
+  try {
+    project = await getProjectForUser(params.projectId, userId);
+  } catch (err) {
+    return projectAccessErrorResponse(err);
   }
-
-  const responseBody = await response.text();
-  const nextResponse = new NextResponse(responseBody, { status: response.status });
-  const responseType = response.headers.get("content-type");
-  if (responseType) {
-    nextResponse.headers.set("content-type", responseType);
+  if (project.userId !== userId) {
+    return NextResponse.json(
+      { error: "Only project owners can delete projects" },
+      { status: 403 },
+    );
   }
-
-  return nextResponse;
-}
-
-export async function GET(request: NextRequest, context: { params: Promise<{ projectId: string }> }) {
-  const params = await context.params;
-  return forwardRequest(request, params, "GET");
-}
-
-export async function PUT(request: NextRequest, context: { params: Promise<{ projectId: string }> }) {
-  const params = await context.params;
-  return forwardRequest(request, params, "PUT");
-}
-
-export async function DELETE(request: NextRequest, context: { params: Promise<{ projectId: string }> }) {
-  const params = await context.params;
-  return forwardRequest(request, params, "DELETE");
-}
-
-
+  await prisma.project.delete({ where: { id: params.projectId } });
+  return new NextResponse(null, { status: 204 });
+});
